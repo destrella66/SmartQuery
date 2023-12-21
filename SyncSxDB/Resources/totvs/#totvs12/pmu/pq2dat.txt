@@ -1,0 +1,13 @@
+PMU;00;S;PMU_FILIAL;Filial;;;1;11;0;@!;1;N;;2;;;
+PMU;01;S;PMU_CINTEG;Cod Emp Inte;;;1;6;0;@!;0;N;;1;;;
+PMU;02;S;PMU_IDSEQ;ID Integrac;;;1;12;0;@!;0;N;;1;;;
+PMU;03;S;PMU_PRPEXT;Proposta Ext;;;1;15;0;@!;0;N;;1;;;
+PMU;04;S;PMU_PROPOS;Cod Proposta;;;1;6;0;@!;0;N;;1;;;
+PMU;05;S;PMU_DTPRPE;Dt Propo Int;;;4;8;0;;0;N;;1;;;
+PMU;06;S;PMU_HRPRPE;Hr Propo Int;;;1;8;0;@R 99:99:99;0;N;;1;;;
+PMU;07;S;PMU_STPRPE;Status Props;;;1;1;0;@!;0;N;;1;;;
+PMU;08;S;PMU_CLIENT;Cod Cliente;;;1;6;0;@!;0;N;;1;;;
+PMU;09;S;PMU_CNPCLI;CNPJ Cliente;;;1;14;0;;0;N;;1;;;
+PMU;10;S;PMU_VENDED;Cod Vendedor;;;1;6;0;@!;0;N;;1;;;
+PMU;11;S;PMU_TABPRC;Tabela Preco;;;1;3;0;@!;0;N;;1;;;
+PMU;12;N;PMU_OK;Ok;;;1;2;0;;0;N;;2;;;

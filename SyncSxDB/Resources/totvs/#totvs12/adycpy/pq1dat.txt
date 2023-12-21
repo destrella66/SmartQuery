@@ -1,0 +1,41 @@
+ADYCPY;PROPOSTAS - GERACAO;73;20200731;;37;2;;1;ADY_OK;;;2;02;;;1;2;0;;;2;;37;SELECT ADY_PROPOS, ADY_PREVIS, ADY_DATA, ADY_OPORTU, ADY_CODIGO, ADY_LOJA, A1_NOME, 
+       CASE WHEN ADY_STATUS = 'H' THEN 'H=Aguardando Analise' WHEN ADY_STATUS = 'I' THEN 'I=Contrato Gerado' WHEN ADY_STATUS = 'J' THEN 'J=Pedido de Venda Gerado'
+            WHEN ADY_STATUS = 'K' THEN 'K=Nota Fiscal Gerada' END AS ADY_STATUS, 
+       ADY_XMODAL, AOM_DESCRI,CASE WHEN ADY_LRAT = 'T' THEN 'Sim' Else 'Nao' END AS RATEIO, '  ' AS ADY_OK
+  FROM <ADVPL>RetSqlName('ADY')</ADVPL> ADY
+  JOIN <ADVPL>RetSqlName('SA1')</ADVPL> SA1 ON A1_FILIAL =  '<ADVPL>xFilial('SA1')</ADVPL>' AND A1_COD = ADY_CODIGO AND A1_LOJA = ADY_LOJA AND SA1.D_E_L_E_T_ = ' '
+  LEFT JOIN <ADVPL>RetSqlName('AOM')</ADVPL> AOM ON AOM_FILIAL =  '<ADVPL>xFilial('AOM')</ADVPL>' AND AOM_CODAGR = ADY_XCODAG AND AOM_CODNIV = ADY_XMODAL AND AOM.D_E_L_E_T_ = ' '
+ WHERE ADY_FILIAL = '<ADVPL>xFilial('ADY')</ADVPL>'  
+<ADVPL>IF(! Empty(mv_par02), "AND ADY_PROPOS BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'", "")</ADVPL>
+<ADVPL>IF(! Empty(mv_par04), "AND ADY_DATA BETWEEN '" + mv_par03 + "' AND '" + mv_par04 + "'", "")</ADVPL>
+   AND ADY_ENTIDA = '1' 
+<ADVPL>IF(! Empty(mv_par06), " AND ADY_XMODAL = '" + mv_par06 + "'", "")</ADVPL>
+<ADVPL>IF(! Empty(mv_par05), " AND EXISTS(SELECT 1 FROM " + RetSqlName('ADZ') + " ADZ JOIN " + RetSqlName('SB1') + " SB1 ON B1_FILIAL = ' ' AND B1_COD = ADZ_PRODUT AND SB1.D_E_L_E_T_ = ' '  JOIN " + RetSqlName('SBM') + " SBM ON BM_FILIAL = ' ' AND BM_GRUPO = B1_GRUPO AND BM_XLINREC BETWEEN '" + alltrim(mv_par05) + "' AND  '" + alltrim(mv_par05) + if(len(alltrim(mv_par05)) = 2, 'ZZ', '') + "' AND SBM.D_E_L_E_T_ = ' ' WHERE ADZ_FILIAL = ADY.ADY_FILIAL AND ADZ_PROPOS = ADY.ADY_PROPOS AND ADZ_REVISA = ADY.ADY_PREVIS AND ADZ.D_E_L_E_T_ = ' ')", "")</ADVPL>
+   AND ADY_STATUS IN ('H', 'I', 'J', 'K') AND ADY.D_E_L_E_T_ = ' ';;Formulario para copia de oportunidade/proposta com objetivo de geração de massa para Testes
+ADYITE;ITENS DA PROPOSTA;73;20200821;;6;2;;0;;;;2;03;;;1;2;0;;;1;;37;SELECT ADZ_PROPOS, ADZ_REVISA, ADZ_ITEM, ADZ_PRODUT, B1_DESC, B1_GRUPO, BM_DESC, BM_XLINREC, AOM_DESCRI, ADZ_XTPCNT
+  FROM <ADVPL>RetSqlName('ADZ')</ADVPL> ADZ
+  JOIN <ADVPL>RetSqlName('ADY')</ADVPL> ADY ON ADY_FILIAL = ADZ_FILIAL AND ADZ_PROPOS = ADY_PROPOS AND ADZ_REVISA = ADY.ADY_PREVIS 
+<ADVPL>IF(! Empty(mv_par02), "AND ADY_PROPOS BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'", "")</ADVPL>
+   AND ADY_DATA BETWEEN '<ADVPL>mv_par03</ADVPL>' AND '<ADVPL>mv_par04</ADVPL>' AND ADY_ENTIDA = '1' AND ADY_STATUS IN ('H', 'I', 'J', 'K')
+<ADVPL>IF(! Empty(mv_par06), " AND ADY_XMODAL = '" + mv_par06 + "'", "")</ADVPL>
+   AND ADY.D_E_L_E_T_ = ' '
+  JOIN <ADVPL>RetSqlName('SB1')</ADVPL> SB1 ON B1_FILIAL = '<ADVPL>xFilial('SB1')</ADVPL>' AND B1_COD = ADZ_PRODUT AND SB1.D_E_L_E_T_ = ' '
+  JOIN <ADVPL>RetSqlName('SBM')</ADVPL> SBM ON BM_FILIAL = B1_FILIAL AND BM_GRUPO = B1_GRUPO 
+   <ADVPL>IF(! Empty(mv_par05), "AND BM_XLINREC BETWEEN '" + alltrim(mv_par05) + "' AND  '" + alltrim(mv_par05) + if(len(alltrim(mv_par05)) = 2, 'ZZ', '') + "' ", "")</ADVPL>
+   AND SBM.D_E_L_E_T_ = ' '
+  LEFT JOIN <ADVPL>RetSqlName('AOM')</ADVPL> AOM ON AOM_FILIAL =  '<ADVPL>xFilial('AOM')</ADVPL>' AND AOM_CODAGR = '000001' AND AOM_CODNIV = BM_XLINREC 
+   AND AOM.D_E_L_E_T_ = ' ';;
+ADYREC;LINHAS RECEITA PROPOSTA;73;20200821;;244;2;;0;;;;2;04;;;1;2;0;;;1;;37;SELECT ADZ_PROPOS, ADZ_REVISA, B1_GRUPO, BM_DESC, BM_XLINREC, AOM_DESCRI
+  FROM <ADVPL>RetSqlName('ADZ')</ADVPL> ADZ
+  JOIN <ADVPL>RetSqlName('ADY')</ADVPL> ADY ON ADY_FILIAL = ADZ_FILIAL AND ADZ_PROPOS = ADY_PROPOS AND ADZ_REVISA = ADY.ADY_PREVIS 
+<ADVPL>IF(! Empty(mv_par02), "AND ADY_PROPOS BETWEEN '" + mv_par01 + "' AND '" + mv_par02 + "'", "")</ADVPL>
+   AND ADY_DATA BETWEEN '<ADVPL>mv_par03</ADVPL>' AND '<ADVPL>mv_par04</ADVPL>' AND ADY_ENTIDA = '1' AND ADY_STATUS IN ('H', 'I', 'J', 'K')
+<ADVPL>IF(! Empty(mv_par06), " AND ADY_XMODAL = '" + mv_par06 + "'", "")</ADVPL>
+   AND ADY.D_E_L_E_T_ = ' '
+  JOIN <ADVPL>RetSqlName('SB1')</ADVPL> SB1 ON B1_FILIAL = '<ADVPL>xFilial('SB1')</ADVPL>' AND B1_COD = ADZ_PRODUT AND SB1.D_E_L_E_T_ = ' '
+  JOIN <ADVPL>RetSqlName('SBM')</ADVPL> SBM ON BM_FILIAL = B1_FILIAL AND BM_GRUPO = B1_GRUPO 
+   <ADVPL>IF(! Empty(mv_par05), "AND BM_XLINREC BETWEEN '" + alltrim(mv_par05) + "' AND  '" + alltrim(mv_par05) + if(len(alltrim(mv_par05)) = 2, 'ZZ', '') + "' ", "")</ADVPL>
+   AND SBM.D_E_L_E_T_ = ' '
+  LEFT JOIN <ADVPL>RetSqlName('AOM')</ADVPL> AOM ON AOM_FILIAL =  '<ADVPL>xFilial('AOM')</ADVPL>' AND AOM_CODAGR = '000001' 
+   AND AOM_CODNIV = BM_XLINREC AND AOM.D_E_L_E_T_ = ' '
+ GROUP BY ADZ_PROPOS, ADZ_REVISA, B1_GRUPO, BM_DESC, BM_XLINREC, AOM_DESCRI;;

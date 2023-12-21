@@ -1,0 +1,1 @@
+RELCAN;RELATORIO DE CANCELAMENTO;69;20210304;;106;2;P01;0;;;"P01->P01_ROTINA = 'RELCAN'";2;01;;;1;2;0;;;1;;lc;;;Este formulario permite a solicitação do relatorio de cancelamentos do processo do MPN, enviando a solicitação ao DataBus, que enviara o relatório por email

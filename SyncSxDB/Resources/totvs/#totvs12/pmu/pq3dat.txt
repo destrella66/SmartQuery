@@ -1,0 +1,1 @@
+PMU;1;PMU_CINTEG+PMU_IDSEQ;Cod Emp Inte+ID Integrac;N

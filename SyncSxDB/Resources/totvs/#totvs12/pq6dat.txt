@@ -1,0 +1,1170 @@
+ADY;01;2;Pesquisar;1;AxPesqui();;;
+ADY;02;2;Visualizar UpLoad;0;AOB->(DbSetOrder(2));;
+AOB->(DbSeek(xFilial("AOB")+"ADY"+xFilial("ADY")+ADY->(ADY_PROPOS+ADY_PREVIS)));;
+CRM90DocVi();;;
+AOX;01;2;Pesquisar;1;AxPesqui();;;
+AOX;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("AOX", AOX->(Recno()),2)
+;;;
+AOX;03;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("AOX", AOX->(Recno()), 4,,, , , , , , , aParam );;;
+ATUZQE;01;2;Abrir CSV;3;nTypeImp := 2
+__ALIAS := aQuery[1][2]:cAlias
+MsAguarde({|| U_ExecSQL('DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>') },"Aguarde...","Deletando importacao anterior")
+U_TRGXLCSV()
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao")
+TCRefresh(aQuery[1][2]:cArqTrb)
+
+
+;UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+	SET STATUS = CASE WHEN EXISTS(
+		SELECT 1 FROM <ADVPL>RetSqlName("SA1")</ADVPL> SA1 
+	WHERE SA1.A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' AND SA1.A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ZQE_CODCLI 
+	AND SA1.A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ZQE_LJCLI AND SA1.D_E_L_E_T_ = ' ' )
+ 				THEN '1' 
+ 				ELSE '2' END,
+ 		A1_NOME = COALESCE((
+		SELECT SA1.A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> SA1 
+	WHERE SA1.A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' AND SA1.A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ZQE_CODCLI 
+	AND SA1.A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ZQE_LJCLI AND SA1.D_E_L_E_T_ = ' ' ),'NAO ENCONTRADO');;
+ATUZQE;02;2;Grava Dados;3;_cRotina := "TRGC010 - ATUZQE - "+ __cUserId
+_dData := DtoS( Date() )
+_cHora := Time()
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Gerando ZQE e AI0")
+MsgInfo("Importação finalizada!");UPDATE <ADVPL>RetSqlName("ZQE")</ADVPL> ZQE
+   SET ZQE_INADIM = 'N', ZQE_ATENDE = 'S', ZQE_USERGA = 'Append' , ZQE_DTATU = '<ADVPL>_dData</ADVPL>', ZQE_HRATU = '<ADVPL>_cHora</ADVPL>', ZQE_ROTINA = '<ADVPL>_cRotina</ADVPL>'
+ WHERE ZQE.ZQE_CODCLI IN (
+ SELECT TMP.ZQE_CODCLI FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP 
+ WHERE ZQE.ZQE_CODCLI = TMP.ZQE_CODCLI AND ZQE.ZQE_LJCLI = TMP.ZQE_LJCLI AND ZQE.ZQE_CONTR = TMP.ZQE_CONTR AND STATUS = '1')  AND ZQE.D_E_L_E_T_ = ' ' ;;
+
+INSERT INTO <ADVPL>RetSqlName("ZQE")</ADVPL>(ZQE_CODCLI, ZQE_LJCLI, ZQE_CONTR, ZQE_INADIM, ZQE_ATENDE, ZQE_USERGA, ZQE_DTATU, ZQE_HRATU, ZQE_ROTINA, R_E_C_N_O_ )
+	SELECT TMP.ZQE_CODCLI, TMP.ZQE_LJCLI, TMP.ZQE_CONTR, 'N' AS ZQE_INADIM, 
+	'S' AS ZQE_ATENDE, 
+	'Append' AS ZQE_USERGA,
+	'<ADVPL>_dData</ADVPL>' AS ZQE_DTATU,
+	'<ADVPL>_cHora</ADVPL>' AS ZQE_HRATU,
+	'<ADVPL>_cRotina</ADVPL>' AS ZQE_ROTINA,
+	ROW_NUMBER() OVER (ORDER BY TMP.ZQE_CODCLI) + (SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("ZQE")</ADVPL>) AS R_E_C_N_O_
+ FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+	LEFT JOIN <ADVPL>RetSqlName("ZQE")</ADVPL> ZQE ON  ZQE.ZQE_FILIAL = '<ADVPL>xFilial("ZQE")</ADVPL>' AND ZQE.ZQE_CODCLI = TMP.ZQE_CODCLI  AND ZQE.ZQE_LJCLI = TMP.ZQE_LJCLI AND ZQE.ZQE_CONTR = TMP.ZQE_CONTR AND ZQE.D_E_L_E_T_ = ' ' WHERE STATUS = '1' AND ZQE.ZQE_CODCLI IS NULL  ;;
+
+   
+   UPDATE <ADVPL>RetSqlName("AI0")</ADVPL> AI0
+   SET AI0_XATUZE = '2'
+		WHERE AI0.AI0_CODCLI IN (SELECT TMP.ZQE_CODCLI FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP 
+ WHERE AI0.AI0_CODCLI = TMP.ZQE_CODCLI AND AI0.AI0_LOJA = TMP.ZQE_LJCLI AND STATUS = '1') AND AI0.D_E_L_E_T_ = ' ' ;;
+
+ INSERT INTO <ADVPL>RetSqlName("AI0")</ADVPL>(AI0_CODCLI, AI0_LOJA, AI0_XATUZE , R_E_C_N_O_ )
+	SELECT TMP.ZQE_CODCLI, TMP.ZQE_LJCLI, '2' AS AI0_XATUZE,  
+	ROW_NUMBER() OVER (ORDER BY TMP.ZQE_CODCLI) + (SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("AI0")</ADVPL>) AS R_E_C_N_O_
+ FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+	LEFT JOIN <ADVPL>RetSqlName("AI0")</ADVPL> AI0 ON AI0.AI0_FILIAL = '<ADVPL>xFilial("AI0")</ADVPL>' AND AI0.AI0_CODCLI = TMP.ZQE_CODCLI  AND AI0.AI0_LOJA = TMP.ZQE_LJCLI AND AI0.D_E_L_E_T_ = ' '
+	WHERE STATUS = '1' AND AI0.AI0_CODCLI IS NULL
+	GROUP BY TMP.ZQE_CODCLI, TMP.ZQE_LJCLI
+	;;
+AUDSSY;01;1;INTEGRACAO SIGAJURI;0;TJURA028();;;
+BEMATI;01;2;Pesquisar;2;AxPesqui();;;
+BEMATI;02;2;Importar CSV;3;nTypeImp := 2;;
+__ALIAS := aQuery[1][2]:cAlias;;
+MsAguarde({|| U_ExecSQL('DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>') },"Aguarde...","Deletando importacao anterior");;
+U_TRGXLCSV();;
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao");;
+TCRefresh(aQuery[1][2]:cArqTrb);;;DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+ WHERE NOT EXISTS(SELECT PMX_DTSOLI FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+                     AND PMX_CINTEG = '000001' AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND D_E_L_E_T_ = ' ');;
+UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'),
+       PMX_IDSEQ = (SELECT MIN(PMX_IDSEQ) FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+                       AND PMX_CINTEG = '000001' AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND PMX_STATUS = '4' AND D_E_L_E_T_ = ' ');;
+UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'),
+       PMX_DTSOLI = (SELECT PMX_DTSOLI FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+                        AND PMX_CINTEG = '000001' AND PMX_IDSEQ = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.PMX_IDSEQ AND D_E_L_E_T_ = ' ');;;;
+BEMATI;03;2;Gerar Ativacao;4;MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Gerando agendamentos");;
+TcRefresh(RetSqlName("PMX"));;;INSERT INTO <ADVPL>RetSqlName("PMX")</ADVPL>(PMX_FILIAL, PMX_IDSEQ, PMX_CINTEG, PMX_DTSOLI, PMX_HRSOLI, PMX_SITUAC, PMX_SYSINP, PMX_CLIENT, PMX_LOJA, PMX_CNPCLI, 
+       	           PMX_STATUS, PMX_PROPOS, PMX_CONTRA, PMX_CTRREV, PMX_TPTRAN, R_E_C_N_O_)
+            SELECT PMX_FILIAL, 
+                   LPAD(ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) + COALESCE((SELECT MAX(PMX_IDSEQ) FROM <ADVPL>RetSqlName("PMX")</ADVPL>), '1'), 12,0) AS PMX_IDSEQ,
+		   '000001' AS PMX_CINTEG, PMX.PMX_DTSOLI, PMX.PMX_HRSOLI, '1' AS PMX_SITUAC, '5' AS PMX_SYSINP, TMP.A1_COD AS PMX_CLIENT, TMP.A1_LOJA AS PMX_LOJA, 
+                   SA1.A1_CGC, '3' AS PMX_STATUS, TMP.ADY_PROPOS, 'CON' || SA1.A1_COD AS PMX_CONTRA, CN9_REVISA AS PMX_CTRREV, '1' AS PMX_TPTRAN, 
+		   ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) + COALESCE((SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("PMX")</ADVPL>), 1) AS R_E_C_N_O_
+	      FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+              JOIN <ADVPL>RetSqlName("PMX")</ADVPL> PMX ON PMX.PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' AND PMX.PMX_IDSEQ = TMP.PMX_IDSEQ AND PMX.D_E_L_E_T_ = ' '
+              JOIN <ADVPL>RetSqlName("SA1")</ADVPL> SA1 ON SA1.A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' AND SA1.A1_COD = TMP.A1_COD AND SA1.A1_LOJA = TMP.A1_LOJA
+               AND SA1.D_E_L_E_T_ = ' ';;
+INSERT INTO <ADVPL>RetSqlName("PMY")</ADVPL>(PMY_FILIAL, PMY_IDSEQ, PMY_SEQ, PMY_CINTEG, PMY_CONTRA, PMY_REVISA, PMY_NUMERO, PMY_ITEM, PMY_PRODUT,
+                                             PMY_HDLCKA, PMY_HDLCKC, PMY_DTSCAN, PMY_HRSCAN, PMY_NFHRD, PMY_SRNFHR, PMY_VLRNF, PMY_DTEMIS, PMY_ITMPRP, PMY_FLDPRP,
+					     PMY_ITMPAI, PMY_PRDPAI, PMY_FLDPAI, PMY_STATUS, R_E_C_N_O_) 
+            SELECT PMY_FILIAL, PMX.PMX_IDSEQ AS PMY_IDSEQ, PMY_SEQ, PMY_CINTEG, PMY_CONTRA, PMX.PMX_CTRREV AS PMY_REVISA, PMY_NUMERO, PMY_ITEM, PMY_PRODUT,
+                   PMY_HDLCKA, PMY_HDLCKA AS PMY_HDLCKC, '<ADVPL>Dtos(dDataBase)</ADVPL>' AS PMY_DTSCAN, '<ADVPL>Time()</ADVPL>' AS PMY_HRSCAN, 
+		   PMY_NFHRD, PMY_SRNFHR, PMY_VLRNF, PMY_DTEMIS, PMY_ITMPRP, PMY_FLDPRP, PMY_ITMPAI, PMY_PRDPAI, PMY_FLDPAI, '2' AS PMY_STATUS, 
+		   ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) + COALESCE((SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("PMY")</ADVPL>), 1) AS R_E_C_N_O_
+	      FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+              JOIN <ADVPL>RetSqlName("PMX")</ADVPL> PMX ON PMX.PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+               AND PMX.PMX_IDSEQ = (SELECT MAX(PMX_IDSEQ) FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+                                       AND PMX_CINTEG = '0000001' AND PMX_CLIENT = TMP.A1_COD AND PMX_PROPOS = TMP.ADY_PROPOS AND D_E_L_E_T_ = ' ') 
+               AND PMX.D_E_L_E_T_ = ' '
+              JOIN <ADVPL>RetSqlName("PMX")</ADVPL> PMX_A ON PMX_A.PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' AND PMX_A.PMX_IDSEQ = TMP.PMX_IDSEQ AND PMX_A.D_E_L_E_T_ = ' '
+              JOIN <ADVPL>RetSqlName("PMY")</ADVPL> PMY ON PMY_FILIAL = PMX.PMX_FILIAL AND PMY_IDSEQ = PMX_A.PMX_IDSEQ AND PMY.D_E_L_E_T_ = ' ';;;;
+BEMATI;04;2;Visualizar Contrato;4;__EXIT := If(U_TLSitCtr( "CON" + (aQuery[1][2]:Alias())->A1_COD,  ,  ), .F., (MsgInfo("Contrato [" + "CON" + (aQuery[1][2]:Alias())->A1_COD + "] nao localizado !"), .T.));;
+U_TGC001CV( CN9->(Recno()) );;;
+BEMCAN;01;2;Pesquisar;1;AxPesqui();;;
+BEMCAN;02;2;Importar CSV;3;nTypeImp := 2
+__ALIAS := aQuery[1][2]:cAlias
+MsAguarde({|| U_ExecSQL('DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>') },"Aguarde...","Deletando importacao anterior")
+U_TRGXLCSV()
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao")
+TCRefresh(aQuery[1][2]:cArqTrb);DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+ WHERE ADY_PROPOS || A1_COD IN (SELECT ADY_PROPOS || A1_COD FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> GROUP BY ADY_PROPOS || A1_COD HAVING COUNT(*) > 1)
+   AND NOT R_E_C_N_O_ IN (SELECT MIN(R_E_C_N_O_) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> GROUP BY A1_COD, ADY_PROPOS HAVING COUNT(*) > 1);;
+UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   STATUS = CASE WHEN NOT EXISTS(SELECT A1_COD FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                        AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ') THEN '3'
+                     WHEN EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+					                AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_SITUAC = 'C' 
+									AND CNB_TIPREC = '1' AND CNB.D_E_L_E_T_ = ' ') THEN '4'
+                     WHEN EXISTS(SELECT 1 FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+	                                AND RTRIM(LTRIM(PMX_CONTRA)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+									AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND PMX_TPTRAN = '2' 
+                                    AND PMX_STATUS = '3' AND D_E_L_E_T_ = ' ') THEN '5'
+                 WHEN NOT EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+				                    AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_TIPREC = '1' 
+									AND CNB.D_E_L_E_T_ = ' ') THEN '2' ELSE '1' END,
+		CN9_REVISA = COALESCE((SELECT MAX(CN9_REVISA) FROM <ADVPL>RetSqlName("CN9")</ADVPL> WHERE CN9_FILIAL = '<ADVPL>xFilial("CN9")</ADVPL>'  
+		                          AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD
+								  AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND D_E_L_E_T_ = ' '), ' ');;
+BEMCAN;03;2;Gerar Cancelamento;4;MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Gerando agendamentos")
+MsAguarde({|| U_ExecSQL(M->PQ6_GSQL) },"Aguarde...","Atualizando consulta");INSERT INTO <ADVPL>RetSqlName("PMX")</ADVPL>(PMX_FILIAL, PMX_IDSEQ, PMX_CINTEG, PMX_DTSOLI, PMX_HRSOLI, PMX_SITUAC, PMX_SYSINP, PMX_CLIENT, PMX_LOJA, PMX_CNPCLI, 
+       	           PMX_STATUS, PMX_PROPOS, PMX_CONTRA, PMX_CTRREV, PMX_JUSCAN, PMX_TPTRAN, PMX_MOTIVO, R_E_C_N_O_)
+            SELECT '<ADVPL>xFilial("PMX")</ADVPL>' AS PMX_FILIAL, 
+			       LPAD(ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) +  COALESCE((SELECT MAX(PMX_IDSEQ) FROM <ADVPL>RetSqlName("PMX")</ADVPL>), '1'), 12,0) AS PMX_IDSEQ,
+		           '000001' AS PMX_CINTEG, '<ADVPL>Dtos(dDataBase)</ADVPL>' AS PMX_DTSOLI, '<ADVPL>Time()</ADVPL>' AS PMX_HRSOLI, '1' AS PMX_SITUAC, 
+			       '5' AS PMX_SYSINP, TMP.A1_COD AS PMX_CLIENT, TMP.A1_LOJA AS PMX_LOJA, TMP.A1_CGC, '3' AS PMX_STATUS, TMP.ADY_PROPOS, 
+				   'CON' || A1_COD AS PMX_CONTRA, CN9_REVISA AS PMX_CTRREV, PMX_JUSCAN, '2' AS PMX_TPTRAN, PMX_MOTIVO, 
+				   ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) + COALESCE((SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("PMX")</ADVPL>), 1) AS R_E_C_N_O_
+	          FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+  		     WHERE TMP.STATUS = '1';;
+INSERT INTO <ADVPL>RetSqlName("PMY")</ADVPL>(PMY_FILIAL, PMY_IDSEQ, PMY_SEQ, PMY_CINTEG, PMY_CONTRA, PMY_REVISA, PMY_NUMERO, PMY_ITEM, PMY_PRODUT,
+                                             PMY_HDLCKA, PMY_HDLCKC, PMY_DTSCAN, PMY_HRSCAN, PMY_NFHRD, PMY_SRNFHR, PMY_VLRNF, PMY_DTEMIS, PMY_ITMPRP, PMY_FLDPRP,
+											 PMY_ITMPAI, PMY_PRDPAI, PMY_FLDPAI, PMY_STATUS, R_E_C_N_O_) 
+            SELECT PMY_FILIAL, PMX.PMX_IDSEQ AS PMY_IDSEQ, PMY_SEQ, PMY_CINTEG, PMY_CONTRA, PMX.PMX_CTRREV AS PMY_REVISA, PMY_NUMERO, PMY_ITEM, PMY_PRODUT,
+                   PMY_HDLCKA, PMY_HDLCKA as PMY_HDLCKC, '<ADVPL>Dtos(dDataBase)</ADVPL>' AS PMY_DTSCAN, '<ADVPL>Time()</ADVPL>' AS PMY_HRSCAN, 
+				   PMY_NFHRD, PMY_SRNFHR, PMY_VLRNF, PMY_DTEMIS, PMY_ITMPRP, PMY_FLDPRP, PMY_ITMPAI, PMY_PRDPAI, PMY_FLDPAI, '2' AS PMY_STATUS, 
+				   ROW_NUMBER() OVER (ORDER BY TMP.ADY_PROPOS) + COALESCE((SELECT MAX(R_E_C_N_O_) FROM <ADVPL>RetSqlName("PMY")</ADVPL>), 1) AS R_E_C_N_O_
+ 			  FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> TMP
+              JOIN <ADVPL>RetSqlName("PMX")</ADVPL> PMX ON PMX.PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' AND PMX.PMX_PROPOS = TMP.ADY_PROPOS 
+			   AND PMX.PMX_STATUS = '3' AND PMX.PMX_TPTRAN = '2' AND PMX.D_E_L_E_T_ = ' '
+              JOIN <ADVPL>RetSqlName("PMX")</ADVPL> PMX_A ON PMX_A.PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' AND PMX_A.PMX_PROPOS = TMP.ADY_PROPOS 
+			   AND PMX_A.PMX_STATUS = '4' AND PMX.PMX_TPTRAN = '1' AND PMX_A.D_E_L_E_T_ = ' '
+              JOIN <ADVPL>RetSqlName("PMY")</ADVPL> PMY ON PMY_FILIAL = PMX.PMX_FILIAL AND PMY_IDSEQ = PMX_A.PMX_IDSEQ AND PMY.D_E_L_E_T_ = ' '
+  		     WHERE TMP.STATUS = '1';;;;UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   STATUS = CASE WHEN NOT EXISTS(SELECT A1_COD FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                        AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ') THEN '3'
+                     WHEN EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+					                AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_SITUAC = 'C' 
+									AND CNB_TIPREC = '1' AND CNB.D_E_L_E_T_ = ' ') THEN '4'
+                     WHEN EXISTS(SELECT 1 FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+	                                AND RTRIM(LTRIM(PMX_CONTRA)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+									AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND PMX_TPTRAN = '2' 
+                                    AND PMX_STATUS = '3' AND D_E_L_E_T_ = ' ') THEN '5'
+                 WHEN NOT EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+				                    AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_TIPREC = '1' 
+									AND CNB.D_E_L_E_T_ = ' ') THEN '2' ELSE '1' END,
+		CN9_REVISA = COALESCE((SELECT MAX(CN9_REVISA) FROM <ADVPL>RetSqlName("CN9")</ADVPL> WHERE CN9_FILIAL = '<ADVPL>xFilial("CN9")</ADVPL>'  
+		                          AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD
+								  AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND D_E_L_E_T_ = ' '), ' ')
+BEMCAN;04;2;Processar Todos Agendamentos;3;cPCodEmp := "000001";;
+cTpTrans := "2";;
+cSituac := "1";;
+cStatus := "3";;
+MsAguarde({|| U_TqMnPPMX(2) },"Aguarde...","Processando agendamento cancelamento");;
+
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao");;
+TCRefresh(aQuery[1][2]:cArqTrb);;
+aQuery[1][4]:Refresh();UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   STATUS = CASE WHEN NOT EXISTS(SELECT A1_COD FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                        AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ') THEN '3'
+                     WHEN EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+					                AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_SITUAC = 'C' 
+									AND CNB_TIPREC = '1' AND CNB.D_E_L_E_T_ = ' ') THEN '4'
+                     WHEN EXISTS(SELECT 1 FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+	                                AND RTRIM(LTRIM(PMX_CONTRA)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+									AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND PMX_TPTRAN = '2' 
+                                    AND PMX_STATUS = '3' AND D_E_L_E_T_ = ' ') THEN '5'
+                 WHEN NOT EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+				                    AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_TIPREC = '1' 
+									AND CNB.D_E_L_E_T_ = ' ') THEN '2' ELSE '1' END,
+		CN9_REVISA = COALESCE((SELECT MAX(CN9_REVISA) FROM <ADVPL>RetSqlName("CN9")</ADVPL> WHERE CN9_FILIAL = '<ADVPL>xFilial("CN9")</ADVPL>'  
+		                          AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD
+								  AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND D_E_L_E_T_ = ' '), ' ');;
+BEMCPX;01;2;Pesquisar;1;AxPesqui();;;
+BEMCPX;02;2;Processar agendamento;3;MsAguarde({|| U_TqMnPPMX(1) },"Aguarde...","Processando agendamento cancelamento");;
+
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao");;
+TCRefresh(aQuery[1][2]:cArqTrb);;
+aQuery[1][4]:Refresh();UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_LOJA = '00', A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   STATUS = CASE WHEN NOT EXISTS(SELECT A1_COD FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                        AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = '00' AND D_E_L_E_T_ = ' ') THEN '3'
+                     WHEN EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+					                AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_SITUAC = 'C' 
+									AND CNB_TIPREC = '1' AND CNB.D_E_L_E_T_ = ' ') THEN '4'
+                     WHEN EXISTS(SELECT 1 FROM <ADVPL>RetSqlName("PMX")</ADVPL> WHERE PMX_FILIAL = '<ADVPL>xFilial("PMX")</ADVPL>' 
+	                                AND RTRIM(LTRIM(PMX_CONTRA)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+									AND PMX_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND PMX_TPTRAN = '2' 
+                                    AND PMX_STATUS = '3' AND D_E_L_E_T_ = ' ') THEN '5'
+                 WHEN NOT EXISTS(SELECT 1 FROM CNB000 CNB JOIN CN9000 CN9 ON CN9_FILIAL = ' ' 
+				                    AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD 
+						            AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND CN9.D_E_L_E_T_ = ' ' 
+								  WHERE CNB_FILIAL = ' ' AND CNB_CONTRA = CN9_NUMERO AND CNB_REVISA = CN9_REVISA
+									AND CNB_PROPOS = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.ADY_PROPOS AND CNB_TIPREC = '1' 
+									AND CNB.D_E_L_E_T_ = ' ') THEN '2' ELSE '1' END,
+		CN9_REVISA = COALESCE((SELECT MAX(CN9_REVISA) FROM <ADVPL>RetSqlName("CN9")</ADVPL> WHERE CN9_FILIAL = '<ADVPL>xFilial("CN9")</ADVPL>'  
+		                          AND RTRIM(LTRIM(CN9_NUMERO)) = 'CON' || <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD
+								  AND CN9_ESPCTR = '2' AND CN9_SITUAC = '05' AND CN9_TPCTO = '013' AND D_E_L_E_T_ = ' '), ' ');;
+BEMCPX;03;2;Visualizar;2;FWExecView("Acao Contrato","TINTC004",1,,{|| .T.});;;;;
+CTB001;01;2;Retirar Flag Apropiação;0;__LEXIT := ! msgyesno("Confirma a retirada do flag contabil?");;
+FLF->(DbGoTo((aQuery[1][2]:Alias())->Rec));;
+Iif (!__LEXIT, MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Retirando flag",.T.), Alert("Procedimento cancelado"));;
+
+;UPDATE FLF000 SET FLF_LA = ' ' WHERE FLF_PRESTA = '<ADVPL>FLF->FLF_PRESTA</ADVPL>' AND FLF_FILIAL = '<ADVPL>FLF->FLF_FILIAL</ADVPL>' AND FLF_PARTIC = '<ADVPL>FLF->FLF_PARTIC</ADVPL>';;
+UPDATE FLE000 SET FLE_LA = ' ' WHERE FLE_PRESTA =  '<ADVPL>FLF->FLF_PRESTA</ADVPL>' AND FLE_FILIAL = '<ADVPL>FLF->FLF_FILIAL</ADVPL>' AND FLE_PARTIC = '<ADVPL>FLF->FLF_PARTIC</ADVPL>'
+;;
+CTTPRC;01;2;Atualização de Preços;3;__REFRESH := .T.
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Aguarde - Processando Informações.");UPDATE <ADVPL>RetSqlName("PDM")</ADVPL>
+   SET PDM_VALOR = (
+          SELECT DA1_PRCVEN 
+             FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+           WHERE OK <> ' '
+                AND <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.RECNO_PDM =                                        <ADVPL>RetSqlName("PDM")</ADVPL>.R_E_C_N_O_)
+ WHERE PDM_FILIAL = ' '
+   AND R_E_C_N_O_ IN (SELECT RECNO_PDM 
+                        FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>
+                       WHERE OK <> ' ')
+   AND D_E_L_E_T_ = ' ';;
+
+;;
+GCVPEN;01;4;ENVIO EMAIL;4;__EXIT := (aQuery[1][2]:cAlias)->(Eof())  .OR. ((aQuery[1][2]:cAlias)->(TOTAL)==0) ;;
+cTo     := GetMv("TI_PENCRFI",,"");;
+cTitulo := "Atenção: Pendências Cronograma Financeiro";;
+cEMail := "Favor, reprocessá-las através da tela de Pendências";;
+U_xSendMail(cTo, cTitulo, cEMail, , .T.,  ,, GetMv("MV_RELAUTH",,.F.), .T.)
+
+;;;
+INTPMU;01;4;Envio de email;4;__EXIT := (aQuery[1][2]:cAlias)->(Eof());;
+
+cTo     := "ti.ond@totvs.com.br";;
+cEmail  := "<b>Propostas</b><br />";;
+cTitulo := "Assunto: [ Oferta Misterchef ] - Problema na Integração com Protheus";;
+nPedidos := 0;;
+
+nHandle := MSFCreate((cArquivo := CriaTrab(Nil, .F.) + ".TXT"), 0);;
+
+MsAguarde({|| U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}) },"Aguarde...","Enviando email");;
+
+FClose(nHandle);;
+
+cEMail := "";;
+cEMail += "Existem " + Alltrim(Str(nPedidos)) + " pedidos da oferta Misterchef que não foram integradas com o Protheus. Ocorreu algm problema, pois estão há ";;
+cEMail += "mais de " + mv_par04 + " minutos parados no Painel" + "<br/>";;
+cEMail += "de Integração. Para acessar o Painel de Integração e visualizar quais são as propostas acesse: Faturamento -> Miscelanea -> Integracoes -> ";;
+cEMail += "Monitor de Propostas -> Empresa 000003 " + "<br/>";;
+cEMail += "<br/>";;
+cEMail += "1-Erro geração oportunidade" + "<br/>";;
+cEMail += "2-Erro Geracao Proposta" + "<br/>";;
+cEMail += "3-Pendente de Processamento" + "<br/>";;
+cEMail += "4-Oportunidade Gerada" + "<br/>";;
+cEMail += "E-Tentativas para geracao da proposta excedida" + "<br/>";;
+cEMail += "<br/>";;
+cEMail += "As causas do erro podem visualizados no campo Observação (PMU_OBS)" + "<br/>";;
+
+MsAguarde({|| U_xSendMail(cTo, cTitulo, cEMail, "\SYSTEM\" + cArquivo, .T., , , GetMv("MV_RELAUTH",,.F.), .T.) },"Aguarde...","Enviando email");;cAux := "Id: " + (aQuery[1][2]:cAlias)->PMU_IDSEQ + " - Proposta Origem: " + Dtoc((aQuery[1][2]:cAlias)->PMU_DTPRPE);;
+cAux += " - " + (aQuery[1][2]:cAlias)->PMU_HRPRPE + " -  Proposta Origem: " + AllTrim((aQuery[1][2]:cAlias)->PMU_PRPEXT);;
+cAux += If(! Empty((aQuery[1][2]:cAlias)->PMU_PROPOS), " - Proposta Protheus: " + (aQuery[1][2]:cAlias)->PMU_PROPOS, "");;
+cAux += " - Status: " + (aQuery[1][2]:cAlias)->PMU_STPRPE + "-" + ALLTRIM((aQuery[1][2]:cAlias)->X5_DESCRI);;
+
+FWrite(nHandle, cAux + Chr(13) + Chr(10));;
+
+nPedidos ++;;;
+MEDDEL;01;4;Envio de email;4;__EXIT := (aQuery[1][2]:cAlias)->(Eof());;
+
+cTo     := "karlla.gomes@totvs.com.br;cleber.santos@totvs.com.br;apenha@totvs.com.br";;
+cCopia := "alberto.kibino@totvs.com.br;gomes.rubens@totvs.com.br";;
+cEmail  := "<b></b><br />";;
+
+
+nHandle := MSFCreate((cArquivo := CriaTrab(Nil, .F.) + ".TXT"), 0);;
+nMedicao := 0;;
+
+MsAguarde({|| U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}) },"Aguarde...","Enviando email");;
+
+FClose(nHandle);;
+
+cEMail := "";;
+cEMail += "Ambiente: " + GetEnvServer();;
+cEMail += "<br/>";;
+cEMail += "Existem " + Alltrim(Str(nMedicao)) + " itens de medições que estão deletadas com pedido. ";;
+cEMail += "<br/>";;
+cEMail += "Competencia -> " + MV_PAR01;;
+cEMail += "<br/>";;
+cEMail += "Recuperar as medições e fazer as amarrações necessárias. ";;
+cEMail += "<br/>";;
+cEMail += "E-mail automático - Consulta Personalizada";;
+cEMail += "<br/>";;
+
+cTitulo := "Assunto: Existem " + Alltrim(Str(nMedicao)) + " itens de medicoes apagadas com pedido. Compet:" + MV_PAR01;;
+
+MsAguarde({|| U_xSendMail(cTo, cTitulo, cEMail, "\SYSTEM\" + cArquivo, .T.,cCopia ,, GetMv("MV_RELAUTH",,.F.), .T.) },"Aguarde...","Enviando email");;cAux := "Contrato: " + (aQuery[1][2]:cAlias)->CNE_CONTRA + " - Planilha: " + (aQuery[1][2]:cAlias)->CNE_NUMERO;;
+cAux += " Compet: " + (aQuery[1][2]:cAlias)->CND_COMPET + " -  Cliente: " + AllTrim((aQuery[1][2]:cAlias)->CND_XCLIEN);;
+cAux += " Item: " + (aQuery[1][2]:cAlias)->CNE_ITEM + " -  Medicao: " + AllTrim((aQuery[1][2]:cAlias)->CNE_NUMMED);;
+cAux += " Filial: " + (aQuery[1][2]:cAlias)->C6_FILIAL + " -  Pedido: " + AllTrim((aQuery[1][2]:cAlias)->C6_NUM);;
+cAux += " Produto: " + (aQuery[1][2]:cAlias)->C6_PRODUTO + " -  Item Pedido: " + AllTrim((aQuery[1][2]:cAlias)->C6_ITEM);;
+cAux += " Item Planilha: " + (aQuery[1][2]:cAlias)->C6_XITMPLA + " -  Nota: " + AllTrim((aQuery[1][2]:cAlias)->C6_NOTA);;
+
+
+FWrite(nHandle, cAux + Chr(13) + Chr(10));;
+
+nMedicao++;;;
+MEDDUP;01;4;Envio de email;4;__EXIT := (aQuery[1][2]:cAlias)->(Eof());;
+
+cTo     := "karlla.gomes@totvs.com.br;cleber.santos@totvs.com.br;apenha@totvs.com.br";;
+cCopia := "alberto.kibino@totvs.com.br;gomes.rubens@totvs.com.br";;
+cEmail  := "<b></b><br />";;
+
+
+nHandle := MSFCreate((cArquivo := CriaTrab(Nil, .F.) + ".TXT"), 0);;
+nMedicao := 0;;
+
+MsAguarde({|| U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}) },"Aguarde...","Enviando email");;
+
+FClose(nHandle);;
+
+cEMail := "";;
+cEMail += "Ambiente: " + GetEnvServer();;
+cEMail += "<br/>";;
+cEMail += "Existem " + Alltrim(Str(nMedicao/2)) + " medições duplicadas. ";;
+cEMail += "<br/>";;
+cEMail += "Competencia -> " + MV_PAR01;;
+cEMail += "<br/>";;
+cEMail += "Analisar as medições e excluir caso esteja em duplicidade. ";;
+cEMail += "<br/>";;
+cEMail += "E-mail automático - Consulta Personalizada";;
+cEMail += "<br/>";;
+
+cTitulo := "Assunto: Existem " + Alltrim(Str(nMedicao/2)) + " medicoes duplicadas com pedidos. Compet:  " + MV_PAR01;;
+
+MsAguarde({|| U_xSendMail(cTo, cTitulo, cEMail, "\SYSTEM\" + cArquivo, .T., cCopia, , GetMv("MV_RELAUTH",,.F.), .T.) },"Aguarde...","Enviando email");;cAux := "Filial: " + (aQuery[1][2]:cAlias)->CNE_FILIAL;;
+cAux += " Contrato: " + (aQuery[1][2]:cAlias)->CNE_CONTRA;;
+cAux += " Planilha: " + (aQuery[1][2]:cAlias)->CNE_NUMERO;;
+cAux += " Compet: " + (aQuery[1][2]:cAlias)->CND_COMPET;;
+cAux += " Data Medicao: " + Dtoc((aQuery[1][2]:cAlias)->CND_DTINIC);;
+cAux += " Cliente: " + (aQuery[1][2]:cAlias)->CND_XCLIEN;;
+cAux += " Item: " + (aQuery[1][2]:cAlias)->CNE_ITEM;;
+cAux += " Medicao: " + (aQuery[1][2]:cAlias)->CNE_NUMMED;;
+cAux += " Pedido: " + (aQuery[1][2]:cAlias)->C5_NUM;;
+cAux += " Data Pedido: " + Dtoc((aQuery[1][2]:cAlias)->C5_EMISSAO);;
+cAux += " Cod Prod.: " + (aQuery[1][2]:cAlias)->C6_PRODUTO;;
+cAux += " Produto: " + (aQuery[1][2]:cAlias)->B1_DESC;;
+cAux += " Item Planilha: " + (aQuery[1][2]:cAlias)->C6_XITMPLA;;
+cAux += " Nf Fatura: " + (aQuery[1][2]:cAlias)->D2_DOC;;
+cAux += " Serie NF: " + (aQuery[1][2]:cAlias)->D2_SERIE;;
+cAux += " Data Fatura: " + Dtoc((aQuery[1][2]:cAlias)->D2_EMISSAO);;
+cAux += " Qtd Fat: " + AllTrim(str((aQuery[1][2]:cAlias)->D2_QUANT));;
+cAux += " Prc. Venda: " + AllTrim(str((aQuery[1][2]:cAlias)->D2_PRCVEN));;
+cAux += " Total Fat: " + AllTrim(str((aQuery[1][2]:cAlias)->D2_TOTAL));;
+cAux += " Nf dev.: " + (aQuery[1][2]:cAlias)->D1_DOC;;
+cAux += " Serie NF Dev.: " + (aQuery[1][2]:cAlias)->D1_SERIE;;
+cAux += " Data Dev.: " + Dtoc((aQuery[1][2]:cAlias)->D1_EMISSAO);;
+cAux += " Qtd Dev.: " + AllTrim(str((aQuery[1][2]:cAlias)->D1_QUANT));;
+cAux += " Prc. Dev.: " + AllTrim(str((aQuery[1][2]:cAlias)->D1_VUNIT));;
+cAux += " Total Dev.: " + AllTrim(str((aQuery[1][2]:cAlias)->D1_TOTAL));;
+cAux += " Qtd Dev.: " + AllTrim(str((aQuery[1][2]:cAlias)->D1_QTDEDEV));;
+
+
+FWrite(nHandle, cAux + Chr(13) + Chr(10));;
+
+nMedicao++;;;
+PHJ;01;2;Pesquisar;1;AxPesqui();;;
+PHJ;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PHJ", PHJ->(Recno()),2);;;
+PHJ;03;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("PHJ", PHJ->(Recno()), 4,,, , , , , , , aParam );;;
+PMU;01;2;Pesquisar;1;AxPesqui();;;
+PMU;02;2;Copia Tabela;4;DbSelectArea("PMU");;
+DbGoTop();;
+__SYSTEM := "\data\pmutmp.dtc";;
+__LOCAL := "C:\Temp\integra\pmutmp.dtc";;
+__dbCopy(__SYSTEM, Nil, Nil, Nil, Nil, Nil, Nil, "CTREECDX");;
+__copyfile(__SYSTEM,__LOCAL);;;;;
+POX;01;2;Pesquisar;1;AxPesqui();;;
+POX;02;2;Visualizar;2;AxVisual("POX", POX->(Recno()),2);;;
+PQ1;01;2;Pesquisar;1;AxPesqui();;;
+PQ1;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PQ1", PQ1->(Recno()),2);;;
+PQ1;03;2;Ajusta Ordem e Alias;4;aTroca := {};;
+Aadd(aTroca, { "ADK000X", '<ADVPL>RETSQLNAME("ADK")</ADVPL>' })
+
+nHandle := MSFCreate("C:\TEMP\CONSULTA.HTM", 0);;
+FWrite(nHandle, '<html><head><title>Log de Alterações Instrução SQL</title><style type="text/css">');;
+FWrite(nHandle, "<!--table {width:760px;_width:760px;} #celula1 { width: 100px;  padding:10px; _width: 255px; -->");;
+FWrite(nHandle, "</style></head><body>");;
+FWrite(nHandle, "<table>");;
+FWrite(nHandle, '<tr><td id="celula1">ID</td><td id="celula1">SQL ANTES</td><td id="celula1">SQL DEPOIS</td></tr>' + Chr(13) + Chr(10));;
+DbSelectArea("PQ1");;
+cOrdem := "01";;
+MsAguarde({|| PQ1->(U_TRGWHILE("PQ1", ALLTRIM(M->PQ6_GDVPL), {}, .F.) ) },"Aguarde...","Ajustando as instruções");;
+
+FWrite(nHandle, "</table>");;
+FWrite(nHandle, "</body>");;
+FWrite(nHandle, "</html>");;
+FClose(nHandle);;
+
+Alert("Log Gerado em c:\temp\CONSULTA.HTM");;M->PQ1_SQL := PQ1->PQ1_SQL;;
+AEval( aTroca, { | aItem | M->PQ1_SQL := StrTran(M->PQ1_SQL, aItem[1], aItem[2]) } )
+
+If(M->PQ1_SQL <> PQ1->PQ1_SQL, FWrite(nHandle, '<tr><td id="celula1">' + PQ1->PQ1_ID + '</td>' + Chr(13) + Chr(10) + '<td id="celula1">' + PQ1->PQ1_SQL + '</td>' +  Chr(13) + Chr(10) + '<td id="celula1">' + M->PQ1_SQL + "</td></tr>" + Chr(13) + Chr(10)), .F.);;
+
+RecLock("PQ1", .F.);;
+PQ1->PQ1_ORDER := cOrdem;;
+PQ1->PQ1_SQL := M->PQ1_SQL;;
+PQ1->(MsUnLock());;
+cOrdem := Soma1(cOrdem);;;
+PQ9;01;2;Pesquisar;1;AxPesqui();;;
+PQ9;02;2;Visualização;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PQ9", PQ9->(Recno()),2)
+;;;
+PQ9;03;2;Inclusão;3;cCadastro:= oCQuery:cCadastro;;
+AxInclui("PQ9", 0,3)
+;;;
+PQ9;04;2;Alteração;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("PQ9", PQ9->(Recno()), 4,,, , , , , , , aParam )
+;;;
+PQ9;05;2;Exclusão;5;cCadastro:= oCQuery:cCadastro;;
+AxDeleta("PQ9", PQ9->(Recno()),5)
+;;;
+RECWS;01;2;Pesquisar;1;AxPesqui();;;
+RECWS;02;2;Importar Arquivo;3;U_TRGTXTPN1("000000", "RWS", "RWC")
+__REFRESH := .T.;;;
+RECWS;03;4;Consulta Web Service ReceitaWS;4;cMsgVld    := "";;
+cRetWsPad  := "";;
+cRetWsErro := "";;
+cEnvio := "";;
+__REGPRC := 0;;
+
+MsAguarde({|| U_TRGPN1WS((oCQuery:cAlias)->PN1_CINTEG, "000027", aQuery[2][2]:cAlias, aQuery[2][5])  },"Aguarde...","Executando [" + cTitulo + "]");;__EXIT := ! (aQuery[2][2]:cAlias)->PN1_STATUS $ "12" .OR. Val((aQuery[2][2]:cAlias)->PN1_EXEC) > 05;;
+
+__REGPRC := __REGPRC + 1;;
+__CONTINUA :=  __REGPRC < 4;;
+__EXIT := ! __CONTINUA;;
+
+__REFRESH := .T.;;
+
+cCnpj  := (aQuery[2][2]:cAlias)->PN1_CHVFUL;;
+If(oCQuery:lJob, ConOut("JOB - CNPJ: " + cCnpj), "");;
+
+U_FCsmWSAdq({}, (oCQuery:cAlias)->PN1_CINTEG, "000027", cCnpj, @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+PN1->(DbGoto((aQuery[2][2]:cAlias)->PN1_RECNO));;
+PN1->(RecLock("PN1", .F.));;
+PN1->PN1_STATUS := If(Upper(cRetWsErro) = "200 OK" .And. ! "ERROR" $ cRetWsPad, "4", "2")
+PN1->PN1_OBSERR := If(PN1->PN1_STATUS = "4", cRetWsPad, cRetWsErro);;
+PN1->PN1_DTINTE := dDataBase;;
+PN1->PN1_HRINTE := Time();;
+cChave := Soma1(Substr(PN1->PN1_CHVFUL, 4, 2));;
+If("ERROR" $ cRetWsPad, cChave := "99", Nil);;
+PN1->PN1_CHVFUL := Left(PN1->PN1_CHVFUL, 3) + cChave  + Substr(PN1->PN1_CHVFUL, 6, Len(PN1->PN1_CHVFUL));;
+PN1->(MsUnLock());;;
+RECWS;04;2;Gerar CSV;4;U_TRGPN1CSV(aQuery[2][2]:cAlias, aQuery[2][5], "PN1_STATUS = '4'", "RECWSC");;;
+RECWSC;01;2;Pesquisar;1;AxPesqui();;;
+RECWSC;02;2;Visualizar;2;PN1->(DbGoTo((aQuery[2][2]:cAlias)->PN1_RECNO))
+AxVisual("PN1", PN1->(Recno()),2);;;
+SA1PMV;01;2;Pesquisar;1;AxPesqui();;;
+SA1PMV;02;4;Gerar Clientes;3;cQuery := 'SELECT COALESCE(MAX(R_E_C_N_O_), 1) AS PMT_RECNO FROM <ADVPL>RetSqlName("PMT")</ADVPL>';;
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,ChangeQuery(U_ParserAdv(cQuery))),"QRYPMT",.F.,.T.);;
+M->PMT_RECNO := QRYPMT->PMT_RECNO;;
+QRYPMT->(DbCloseArea());;
+
+cQuery := 'SELECT COALESCE(MAX(R_E_C_N_O_), 1) AS PMV_RECNO FROM <ADVPL>RetSqlName("PMV")</ADVPL>';;
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,ChangeQuery(U_ParserAdv(cQuery))),"QRYPMV",.F.,.T.);;
+M->PMV_RECNO := QRYPMV->PMV_RECNO;;
+QRYPMV->(DbCloseArea());;
+
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Gerando lista de clientes");;
+__REFRESH := .T.;;;INSERT INTO <ADVPL>RetSqlName("PMV")</ADVPL>(PMV_CINTEG, PMV_ALIAS, PMV_INDICE, PMV_CPOCHV, PMV_CHVFUL, PMV_QTDCHV, PMV_CCHV1, PMV_VAR1, PMV_CCHV2, PMV_VAR2, 
+                   PMV_RCNALS, PMV_CHVPRT, R_E_C_N_O_)
+SELECT ZQJ_CINTEG AS PMV_CINTEG, 'SA1' AS PMV_ALIAS, '1' AS PMV_INDICE, 'A1_COD+A1_LOJA' AS PMV_CPOCHV, A1_COD || A1_LOJA AS PMV_CHVFUL,
+       2 AS PMV_QTDCHV, 'A1_COD' AS PMV_CCHV1, A1_COD AS PMV_VAR1, 'A1_LOJA' AS PMV_CCHV2, A1_LOJA AS PMV_VAR2, RECNO_SA1 AS PMV_RCNALS, 
+       A1_COD || A1_LOJA AS PMV_CHVPRT, <ADVPL>Alltrim(Str(M->PMV_RECNO))</ADVPL> + ROWNUM AS R_E_C_N_O_
+  FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>
+ ORDER BY A1_COD;;
+INSERT INTO <ADVPL>RetSqlName("PMT")</ADVPL>(PMT_ALIAS, PMT_TPEXIM, PMT_INDICE, PMT_CPOCHV, PMT_CHVFUL, PMT_RCNALS, PMT_TPMNT, PMT_DTMNT, PMT_HRMNT, PMT_CINTEG, PMT_STATUS, R_E_C_N_O_)
+SELECT 'SA1' AS PMV_ALIAS, 'E' AS PMT_TPEXIM, '1' AS PMT_INDICE, 'A1_COD||A1_LOJA' AS PMT_CPOCHV, A1_COD || A1_LOJA AS PMT_CHVFUL, RECNO_SA1 AS PMT_RCNALS,
+       '1' AS PMT_TPMNT, '<ADVPL>Dtos(dDataBase)</ADVPL>' AS PMT_DTMNT, '<ADVPL>TIME()</ADVPL>' AS PMT_HRMNT, ZQJ_CINTEG AS PMT_CINTEG, 
+       '1' AS PMT_STATUS, <ADVPL>Alltrim(Str(M->PMT_RECNO))</ADVPL> + ROWNUM AS R_E_C_N_O_
+  FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>
+ ORDER BY A1_COD;;
+SC7;01;2;Gerar PC;4;u_AprovMed();;;
+SF2NFE;01;2;Pesquisar;1;AxPesqui();;;
+SF2NFE;02;2;Consulta Rps;4;StaticCall(TFATX003,ProcQGAtStNf);;;
+STVIAG;01;4;Atualizar status da viagem;4;__nRegAtu := 1
+
+If( aQuery[1][2]:lJob, (aQuery[1][2]:cAlias)->(U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}, .T.) ), FwMsgRun(,{|oSay| __oSay := oSay, (aQuery[1][2]:cAlias)->(U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}, .T.) ) },"Aguarde...","Ajustando Status dos planos"));;;;aLogin := U_GerAcessRes()
+cToken  := If( aLogin[1], aLogin[2], "")
+__EXIT := EMPTY(cToken)
+
+If(!aQuery[1][2]:lJob,__oSay:SetText("Registro " + AllTrim(Str(__nRegAtu++)) + "/" + AllTrim(Str((aQuery[1][2]:cAlias)->TOTREG)) + "..."),)
+If(!aQuery[1][2]:lJob,ProcessMessage(),)
+
+aArea := GetArea()
+aAreaPZG := PZG->(GetArea())
+PZG->(DBSetOrder(1))
+
+aHeader := {}
+AADD(aHeader, "SecurityToken:" + cToken )
+AADD(aHeader, "Content-Type: application/json")
+aRet := U_ResInteg("000004", , aHeader, ,.T.,"?$select=id,status,datadefechamento,&id="+cValToChar((aQuery[1][2]:cAlias)->PZG_ID)+" ")
+
+If(!(aRet[2]:status == "Aberto" .or. aRet[2]:status == "Cancelado") .And. AttIsMemberOf(aRet[2],"datafechamento"),(If(PZG->(DbSeek((aQuery[1][2]:cAlias)->PZG_FILIAL+Str((aQuery[1][2]:cAlias)->PZG_ID,10,0))),(RecLock("PZG",.F.),PZG->PZG_STATUS:=aRet[2]:status,PZG->PZG_DTFEC:=Stod(StrTran(Left(aRet[2]:dataFechamento,10),"-","")),MsUnlock()),)),)
+
+PZG->(RestArea(aAreaPZG))
+RestArea(aArea);
+SX3;01;2;Estrutura;3;aInfo := PHL->(DbStruct());;
+MemoWrite("C:\Temp\pam\phl.htm", VarInfo("aInfo", aInfo));;;
+SX3;02;2;Importacao TXT;3;SETFUNNAME("CTBA500");;
+CTBA500();;;
+SX3;03;2;Teste de Rotina;3;SETFUNNAME("TFINR025");;
+U_TFINR025();;;
+SX5;01;2;Ajuste;3;RECLOCK("SX5", .T.);;
+SX5->X5_TABELA := "_M";;
+SX5->X5_CHAVE := "276";;
+SX5->X5_DESCRI := "Geracao ID Excedentes";;
+SX5->X5_DESCSPA := "Geracao ID Excedentes";;
+SX5->X5_DESCENG := "A";;
+SX5->(MsUnLock());;;;;
+SX6;01;2;Pesquisar;1;AxPesqui();;;
+SX6;02;2;Alterar;4;cCadastro:= oCQuery:cCadastro
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+IF(.T., .T., AxAltera("SX6", SX6->(Recno()), 4,,, , , , , , , aParam ))
+RECLOCK("SX6", .F.);;
+SX6->X6_CONTEUD := "2suef2acf6l80u42ma60l153pc:ej96sv7bvndlvsrpdpvled72v8eplsfrobq5f0pikvj91o1n4v8";;
+SX6->(MsUnLock());;;
+SX6;03;2;Data Fontes;4;u_tdiChSrc();;;
+SX6;04;2;Fonte Individual;3;cData := ""
+cData += "MALTCLI.PRW: " + DToC(GetAPOInfo(GetSrcArray("MALTCLI.PRW")[1])[4])+" "+GetAPOInfo(GetSrcArray("MALTCLI.PRW")[1])[5] + Chr(13) + Chr(10);;
+cData += "TGCVA032.PRW: " + DToC(GetAPOInfo(GetSrcArray("TGCVA032.PRW")[1])[4])+" "+GetAPOInfo(GetSrcArray("TGCVA032.PRW")[1])[5] + Chr(13) + Chr(10);;
+
+Alert(cData);;
+MemoWrit("c:\temp\data.txt", cData);
+
+;;
+SX6;05;2;Relatorio;3;U_RELGUIAPC();;;
+TFI930;01;1;RELATORIO DE AGLUTINADAS;0;U_TFINR930();;;
+UPDMPL;1;2;Pesquisar;1;AxPesqui();;;
+UPDMPL;2;2;Visualizar Cliente;2;SA1->(DbSetOrder(1))
+SA1->(DbSeek(xFilial() + (oCQuery:cAlias)->A1_COD + A1_LOJA))
+A030Visual("SA1",SA1->(Recno()),2);;;
+UPDMPL;3;2;Visualiza Contrato;2;__EXIT := If(U_TLSitCtr( "CON" + (oCQuery:Alias())->A1_COD,  ,  ), .F., (MsgInfo("Contrato [" + "CON" + (oCQuery:Alias())->A1_COD + "] nao localizado !"), .T.))
+U_TGC001CV( CN9->(Recno()) );;;
+UPDMPN;1;2;Pesquisar;0;AxPesqui();;;
+UPDMPN;2;2;Visualizar Cliente;5;SA1->(DbGoto((oCQuery:cAlias)->RECNO))
+A030Visual("SA1",SA1->(Recno()),2);;;
+UPDMPN;3;2;Visualizar Contrato;5;__EXIT := If(U_TLSitCtr( "CON" + (oCQuery:Alias())->A1_COD,  ,  ), .F., (MsgInfo("Contrato [" + "CON" + (oCQuery:Alias())->A1_COD + "] nao localizado !"), .T.))
+U_TGC001CV( CN9->(Recno()) );;;
+UPDMPN;4;4;Atualizar Tipo do Cliente;4;MsAguarde({|| U_TRGEXECJ("UPDMPN") },"Aguarde...","Executando [" + cTitulo + "]")
+__REFRESH := .T.;INSERT INTO <ADVPL>RetSqlName("PN1")</ADVPL>(PN1_FILIAL, PN1_ALIAS, PN1_CPOCHV, PN1_CHVFUL, PN1_TPEXIM, PN1_TPMNT, PN1_DTMNT, PN1_HRMNT, PN1_OBSERR, PN1_MSEXP, R_E_C_N_O_) SELECT '<ADVPL>xFilial("PN1")</ADVPL>', 'SA1', 'A1_XCLIVIP', A1_COD||A1_LOJA, 'E', '2', '<ADVPL>Dtos(dDataBase)</ADVPL>', '<ADVPL>Time()</ADVPL>',        utl_raw.cast_to_raw('De: ' || A1_XCLIVIP || ' Para: ' || A1_XCLIV_N),  '<ADVPL>__cUserID</ADVPL>', 	   ROW_NUMBER() OVER(ORDER BY R_E_C_N_O_)  + (SELECT MAX(R_E_C_N_O_) + 1 FROM <ADVPL>RetSqlName("PN1")</ADVPL>) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 	                                               WHERE A1_OK <> ' ' AND A1_XCLIVIP <> A1_XCLIV_N;;
+UPDATE <ADVPL>RetSqlName("SA1")</ADVPL> SET A1_XCLIVIP = (SELECT A1_XCLIV_N FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE RECNO = <ADVPL>RetSqlName("SA1")</ADVPL>.R_E_C_N_O_) WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' AND R_E_C_N_O_ IN (SELECT RECNO FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE A1_OK <> ' ' AND A1_XCLIVIP <> A1_XCLIV_N) AND D_E_L_E_T_ = ' ';;
+UPDTPC;01;2;Pesquisar;1;AxPesqui();;;
+UPDTPC;02;2;Alterar Tipo Cliente Manualmente;4;aFields := { "A1_COD", "A1_LOJA", "A1_NOME", "A1_CGC", "A1_XCLIVIP", "NOUSER" };;
+aEdit   := { "A1_XCLIVIP" };;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+SA1->(DbGoto((oCQuery:Alias())->RECNO), .T.);;
+AxAltera("SA1", (oCQuery:Alias())->RECNO, 2, aFields, aEdit, , , , , , , aParam );;;
+UPDTPC;03;2;Importar CSV;3;nTypeImp := 2
+__ALIAS := aQuery[1][2]:cAlias
+MsAguarde({|| U_ExecSQL('DELETE FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>') },"Aguarde...","Deletando importacao anterior")
+U_TRGXLCSV()
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atribuindo status de importacao")
+TCRefresh(aQuery[1][2]:cArqTrb);UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   A1_XCLIVIP = COALESCE((SELECT A1_XCLIVIP FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                 AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), ' '), 
+	   RECNO = COALESCE((SELECT R_E_C_N_O_ FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                            AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), 0);;
+UPDTPC;04;1;Efetivar Novo Tipo Cliente;4;MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Efetivando novo tipo")
+MsAguarde({|| U_ExecSQL(M->PQ6_GSQL) },"Aguarde...","Atualizando consulta");INSERT INTO <ADVPL>RetSqlName("PN1")</ADVPL>(PN1_FILIAL, PN1_ALIAS, PN1_CPOCHV, PN1_CHVFUL, PN1_TPEXIM, PN1_TPMNT, PN1_DTMNT, PN1_HRMNT, PN1_OBSERR, PN1_MSEXP, R_E_C_N_O_) 
+SELECT '<ADVPL>xFilial("PN1")</ADVPL>', 'SA1', 'A1_XCLIVIP', A1_COD||A1_LOJA, 'E', '2', '<ADVPL>Dtos(dDataBase)</ADVPL>', '<ADVPL>Time()</ADVPL>', 
+       utl_raw.cast_to_raw('De: ' || A1_XCLIVIP || ' Para: ' || A1_XCLIV_N),  '<ADVPL>__cUserID</ADVPL>', 
+	   ROW_NUMBER() OVER(ORDER BY R_E_C_N_O_)  + (SELECT MAX(R_E_C_N_O_) + 1 FROM <ADVPL>RetSqlName("PN1")</ADVPL>) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+	                                               WHERE A1_OK <> ' ' AND A1_XCLIVIP <> A1_XCLIV_N;;
+UPDATE <ADVPL>RetSqlName("SA1")</ADVPL> 
+   SET A1_XCLIVIP = (SELECT A1_XCLIV_N FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE RECNO = <ADVPL>RetSqlName("SA1")</ADVPL>.R_E_C_N_O_) 
+                      WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' AND R_E_C_N_O_ IN (SELECT RECNO FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 	
+ 					                                                                        WHERE A1_OK <> ' ' AND A1_XCLIVIP <> A1_XCLIV_N) AND D_E_L_E_T_ = ' ';;UPDATE <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> 
+   SET A1_NOME = COALESCE((SELECT A1_NOME FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                              AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' '), 'NAO LOCALIZADO'), 
+	   A1_CGC = COALESCE((SELECT A1_CGC FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                             AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), 'NAO LOCALIZADO'), 
+	   A1_XCLIVIP = COALESCE((SELECT A1_XCLIVIP FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                                 AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), ' '), 
+	   RECNO = COALESCE((SELECT R_E_C_N_O_ FROM <ADVPL>RetSqlName("SA1")</ADVPL> WHERE A1_FILIAL = '<ADVPL>xFilial("SA1")</ADVPL>' 
+                            AND A1_COD = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_COD AND A1_LOJA = <ADVPL>aQuery[1][2]:cArqTrb</ADVPL>.A1_LOJA AND D_E_L_E_T_ = ' ' ), 0)
+UPLOAD;01;2;Pesquisar;1;AxPesqui();;;
+UPLOAD;02;2;Atualizar Data UPLoad - Posicionado;4;MsAguarde({|| U_ExcAdvpl(M->PQ6_GDVPL) },"Aguarde...","Atualizando proposta " + (oCQuery:cAlias)->ADY_PROPOS);;
+;UPDATE ADY000
+   SET ADY_USRUPL = '<ADVPL>(oCQuery:cAlias)->ADC_XCODUS</ADVPL>', 
+       ADY_DTUPL = '<ADVPL>(oCQuery:cAlias)->ADC_XDATA</ADVPL>', 
+	   ADY_HRUPLO = (oCQuery:cAlias)->ADC_XHORA</ADVPL>'
+ WHERE ADY_FILIAL = ' ' AND ADY_PROPOS = '<ADVPL>(oCQuery:cAlias)->ADY_PROPOS</ADVPL>'
+   AND D_E_L_E_T_ = ' ';ADY->(DbGoTo((oCQuery:cAlias)->ADY_RECNO));;
+__EXIT := ! ADY->(RecLock("ADY", .F.));;
+
+RECLOCK(oCQuery:cAlias, .F.);;
+(oCQuery:cAlias)->ADY_USRUPL := (oCQuery:cAlias)->ADC_XCODUS;;
+(oCQuery:cAlias)->ADY_DTUPL := (oCQuery:cAlias)->ADC_XDATA;;
+(oCQuery:cAlias)->ADY_HRUPLO := (oCQuery:cAlias)->ADC_XHORA;;
+(oCQuery:cAlias)->(MsUnLock());;
+
+ADY->ADY_USRUPL := (oCQuery:cAlias)->ADC_XCODUS;;
+ADY->ADY_DTUPL := (oCQuery:cAlias)->ADC_XDATA;;
+ADY->ADY_HRUPLO := (oCQuery:cAlias)->ADC_XHORA;;
+ADY->(MsUnLock());;;
+UPLOAD;03;4;Atualizar Data UPLoad - Selecionados;4;ConOut("UPLOAD - Executando Update de Propostas Sem Data " + DTOC(DATE()) + " - " + TIME());;
+MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Atualizando propostas");;;UPDATE ADY000
+   SET ADY_USRUPL = CASE WHEN ADY_USRUPL <> ' ' THEN ADY_USRUPL ELSE (SELECT MAX(ADC_XCODUS) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE ADY_FILIAL = ADY000.ADY_FILIAL AND ADY_PROPOS = ADY000.ADY_PROPOS) END, 
+       ADY_DTUPL = CASE WHEN ADY_DTUPL <> ' ' THEN ADY_DTUPL ELSE (SELECT MAX(AOB_DTNOTA) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE ADY_FILIAL = ADY000.ADY_FILIAL AND ADY_PROPOS = ADY000.ADY_PROPOS) END, 
+       ADY_HRUPLO = CASE WHEN ADY_HRUPLO <> ' ' THEN ADY_HRUPLO ELSE (SELECT MAX(ADC_XHORA) FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE ADY_FILIAL = ADY000.ADY_FILIAL AND ADY_PROPOS = ADY000.ADY_PROPOS) END
+ WHERE ADY_FILIAL = ' ' AND ADY_PROPOS IN (SELECT ADY_PROPOS FROM <ADVPL>aQuery[1][2]:cArqTrb</ADVPL> WHERE ADY_OK <> ' ')
+   AND D_E_L_E_T_ = ' ';;
+VINDIC;01;2;Pesquisar;2;AxPesqui();;;
+VINDIC;02;4;Enviar Cliente Vindi;4;ConOut("Inicio VINDI A - Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+If(! Empty((aQuery[1][2]:cAlias)->PMV_IDESTR) .And. ! aQuery[1][2]:lJob, Alert("Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_NOME) + " ja integrado na VINDI com o ID [" + AllTrim((aQuery[1][2]:cAlias)->PMV_IDESTR) + "]"), Nil);;
+__EXIT := AllTrim((aQuery[1][2]:cAlias)->PMV_IDESTR) <> '';;
+
+If(Empty((aQuery[1][2]:cAlias)->A1_XEMAILF) .And. ! aQuery[1][2]:lJob, Alert("Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_NOME) + " sem e-mail informado !]"), Nil);;
+__EXIT := Empty((aQuery[1][2]:cAlias)->A1_XEMAILF);;
+
+cMsgVld    := "";;
+cRetWsPad  := "";;
+cRetWsErro := "";;
+cPN4_CINTEG := "000010";;
+cPN4_PROCES := "000028";;
+PN4->(DbSeek(xFilial("PN4") + cPN4_CINTEG + cPN4_PROCES));;
+cEMail   := AllTrim((aQuery[1][2]:cAlias)->A1_XEMAILF);;
+cCCEMail := "";;
+If(At(";", cEMail) > 0 .And. ! Empty(Subs(cEMail, At(";", cEMail) + 1, Len(cEMail))), cCCEMail := StrTran(Subs(cEMail, At(";", cEMail) + 1, Len(cEMail)), ";", ','), Nil);;
+If(At(";", cEMail) > 0, cEMail := Left(cEMail, At(";", cEMail) - 1), Nil);;
+
+aJson := {};;
+aBody := {};;
+aAux := {};;
+Aadd(aAux, { 'code', AllTrim((aQuery[1][2]:cAlias)->A1_COD) });;
+Aadd(aAux, { 'name', AllTrim((aQuery[1][2]:cAlias)->A1_NOME) });;
+Aadd(aAux, { 'email', cEMail });;
+Aadd(aAux, { 'registry_code', AllTrim((aQuery[1][2]:cAlias)->A1_CGC) });;
+Aadd(aJson, { '', aAux} )
+
+aAux := {}
+Aadd(aAux, { 'street', FisGetEnd((aQuery[1][2]:cAlias)->A1_END, (aQuery[1][2]:cAlias)->A1_EST)[1] });;
+Aadd(aAux, { 'number', FisGetEnd((aQuery[1][2]:cAlias)->A1_END, (aQuery[1][2]:cAlias)->A1_EST)[3] });;
+Aadd(aAux, { 'additional_details', (aQuery[1][2]:cAlias)->A1_COMPLEM });;
+Aadd(aAux, { 'zipcode', (aQuery[1][2]:cAlias)->A1_CEP });;
+Aadd(aAux, { 'neighborhood', (aQuery[1][2]:cAlias)->A1_BAIRRO });;
+Aadd(aAux, { 'city', (aQuery[1][2]:cAlias)->A1_MUN });;
+Aadd(aAux, { 'state', (aQuery[1][2]:cAlias)->A1_EST });;
+Aadd(aAux, { 'country', "BR" });;
+Aadd(aJson, { 'address', aAux} )
+
+aAux := {}
+If(! Empty(cCCEMail), Aadd(aAux, { '_cc_email', StrTran(cCCEMail, ";", ",") }), Nil);;
+Aadd(aJson, { 'metadata', aAux} )
+
+aAux := {};;
+__cDDI := If(Empty((aQuery[1][2]:cAlias)->AI0_XSMSP1),(aQuery[1][2]:cAlias)->A1_DDI,(aQuery[1][2]:cAlias)->AI0_XSMSP1);;
+__cDDI := If(Empty(__cDDI), "55", __cDDI);;
+__cDDD := If(Empty((aQuery[1][2]:cAlias)->AI0_XSMSD1),(aQuery[1][2]:cAlias)->A1_DDD,(aQuery[1][2]:cAlias)->AI0_XSMSD1);;
+__cTel := If(Empty((aQuery[1][2]:cAlias)->AI0_XSMST1),(aQuery[1][2]:cAlias)->A1_TEL,(aQuery[1][2]:cAlias)->AI0_XSMST1);;
+
+Aadd(aAux, { 'phone_type', If(!Empty((aQuery[1][2]:cAlias)->AI0_XSMST1),'mobile','landline') });;
+Aadd(aAux, { 'number', '+'+__cDDI+'(' + AllTrim(__cDDD) + ') '+AllTrim(__cTel) });;
+
+If(Val(__cTel) > 0 .And. Len(AllTrim(__cTel)) > 7, Aadd(aBody, { { 'phones', { aAux }} } ), Nil);;
+
+lErro := ! U_LockByTI("_CREDCLIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+If(lErro,ConOut("Erro no LockByTI VINDI A Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD)),"");;
+
+__EXIT := lErro;;
+ConOut("VINDI A - CRED - ANTES DA U_TAqRtJson Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+cJson := U_TAqRtJson(aJson, aBody);;
+
+ConOut("VINDI A - CRED - ANTES DA U_FCsmWSAdq " + cJson + " Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+U_FCsmWSAdq(cJson, cPN4_CINTEG, cPN4_PROCES, Nil, @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+
+If(Type("cRetWsPad") == "U" .And. ! aQuery[1][2]:lJob, ALERT(cRetWsErro), Nil);;
+
+ConOut("VINDI A - CRED - DEPOIS DA U_FCsmWSAdq " + cRetWsPad + " Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+lErro := If(Type("cRetWsPad") == "U", .T., .F.);;
+If(lErro,U_UnLockTI("_CREDCLIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+If(lErro .And. !aQuery[1][2]:lJob, Alert(cRetWsErro),);;
+
+__EXIT := lErro;;
+
+oJson := Nil;;
+FWJsonDeserialize(cRetWsPad,@oJSon);;
+__ID := If(Type("oJson:customer:id") == "N", AllTrim(Str(oJson:customer:id)), Nil);;
+
+RECLOCK("PN1", .T.);;
+PN1->PN1_FILIAL := xFilial("PN1");;
+PN1->PN1_ALIAS  := "PMV";;
+PN1->PN1_CPOCHV := "PMV_CHVFUL";;
+PN1->PN1_CHVFUL := AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA);;
+PN1->PN1_CINTEG := cPN4_CINTEG;;
+PN1->PN1_DTMNT  := Date();;
+PN1->PN1_HRMNT  := Time();;
+PN1->PN1_OBSERR := If(aQuery[1][2]:lJob, "Enviado via JOB ", "Enviado por ação do usuário ") + cRetWsPad + CHR(13)+CHR(10) + " Json enviado " + cJson;;
+PN1->PN1_STATUS := "4";;
+PN1->(MsUnLock());;
+
+__REFRESH := .T.;;
+
+lErro := If(Type("__ID") == "U", .T., .F.);;
+If(lErro,U_UnLockTI("_CREDCLIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+If(lErro .And. !aQuery[1][2]:lJob, Alert(cRetWsErro),);;
+
+__EXIT := lErro;;
+
+
+RECLOCK(aQuery[1][2]:cAlias, .F.);;
+(aQuery[1][2]:cAlias)->PMV_IDESTR := __ID;;
+(aQuery[1][2]:cAlias)->(MsUnLock());;
+
+RECLOCK("PMV", .T.);;
+PMV->PMV_FILIAL := xFilial("PMV");;
+PMV->PMV_CINTEG := cPN4_CINTEG;;
+PMV->PMV_ALIAS  := "PMV";;
+PMV->PMV_INDICE := "1";;
+PMV->PMV_CPOCHV := "A1_COD";;
+PMV->PMV_CHVFUL := AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA);;
+PMV->PMV_IDESTR := __ID;;
+PMV->(MsUnLock());;
+
+U_UnLockTI("_CREDCLIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+
+ConOut("FIM VINDI A - Cliente " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;;;;
+VINDIC;03;4;Enviar Cobranca Inicial;4;ConOut("INICIO VINDI - Fatura " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+lErro := Empty((aQuery[1][2]:cAlias)->PMV_IDESTR) .Or. AllTrim((aQuery[1][2]:cAlias)->PMV_IDESTR) == "ERRO";;
+If(lErro .And. ! aQuery[1][2]:lJob, Alert("Para envio da cobrança inicial é necessário integrar o cliente com a Vindi"), Nil);;
+
+ConOut("VINDI - FATURA " + If(lErro, ".T.", ".F."));;
+
+__EXIT := lErro;;
+
+If(! Empty((aQuery[1][2]:cAlias)->PMV_VAR1) .And. ! aQuery[1][2]:lJob, Alert("Cobranca inicial do " + AllTrim((aQuery[1][2]:cAlias)->A1_NOME) + " ja integrado na VINDI com o ID [" + AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1) + "]"), Nil);;
+
+ConOut("VINDI - FATURA PMV_VAR1 " + AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1) );;
+
+__EXIT := AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1) <> '';;
+
+cMsgVld    := "";;
+cRetWsPad  := "";;
+cRetWsErro := "";;
+cPN4_CINTEG := "000010";;
+cPN4_PROCES := "000029";;
+PN4->(DbSeek(xFilial("PN4") + cPN4_CINTEG + cPN4_PROCES));;
+
+aJson := {};;
+aBody := {};;
+aAux := {};;
+Aadd(aAux, { 'customer_id', Val(AllTrim((aQuery[1][2]:cAlias)->PMV_IDESTR)) });;
+Aadd(aAux, { 'payment_method_code', GetMv("TI_VINDM_I",, "credit_card_1") });;
+Aadd(aJson, { '', aAux} )
+
+aAux := {};;
+Aadd(aAux, { 'product_id',  GetMv("TI_VINDPRD",, 387532)});;
+Aadd(aAux, { 'amount', 1 });;
+Aadd(aBody, { { 'bill_items', { aAux } } } );;
+
+ConOut("VINDI - FATURA antes da U_TAqRtJson ");;
+
+lErro := ! U_LockByTI("_COBINIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+If(lErro,ConOut("Erro no LockByTI VINDI"),"");;
+
+__EXIT := lErro;;
+
+cJson := U_TAqRtJson(aJson, aBody);;
+
+ConOut("VINDI - FATURA antes da U_FCsmWSAdq " + cJson);;
+
+U_FCsmWSAdq(cJson, cPN4_CINTEG, cPN4_PROCES, Nil, @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+
+ConOut("VINDI - FATURA depois da U_FCsmWSAdq " + @cRetWsPad);;
+
+If(ValType("cRetWsPad") == "U", ALERT(cRetWsErro), Nil);;
+
+lErro := If(ValType("cRetWsPad") == "U", .T., .F.);;
+If(lErro,U_UnlockTI("_COBINIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+__EXIT := lErro;;
+
+oJson := Nil;;
+FWJsonDeserialize(cRetWsPad,@oJSon);;
+__ID := If(Type("oJson:bill:id") == "N", AllTrim(Str(oJson:bill:id)), Nil);;
+
+If(__ID == Nil, "Erro ao recuperar o ID [" + cRetWsPad + "]", Nil);;
+
+lErro := If(ValType("__ID") == "U", .T., .F.);;
+If(lErro,U_UnlockTI("_COBINIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+__EXIT := lErro;;
+
+RECLOCK(aQuery[1][2]:cAlias, .F.);;
+(aQuery[1][2]:cAlias)->PMV_VAR1 := __ID;;
+(aQuery[1][2]:cAlias)->(MsUnLock());;
+
+PMV->(DbGoto((aQuery[1][2]:cAlias)->PMV_RECNO));;
+PMV->(RecLock("PMV", .F.));;
+PMV->PMV_VAR1 := __ID;;
+PMV->(MsUnLock());;
+
+RECLOCK("PN1", .T.);;
+PN1->PN1_FILIAL := xFilial("PN1");;
+PN1->PN1_ALIAS  := "PMV";;
+PN1->PN1_CPOCHV := "PMV_CCHV1";;
+PN1->PN1_CHVFUL := AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA);;
+PN1->PN1_CINTEG := cPN4_CINTEG;;
+PN1->PN1_DTMNT  := Date();;
+PN1->PN1_HRMNT  := Time();;
+PN1->PN1_OBSERR := If(aQuery[1][2]:lJob, "Enviado via JOB ", "Enviado por ação do usuário ") + cRetWsPad;;
+PN1->PN1_STATUS := "4";;
+PN1->(MsUnLock());;
+
+U_UnlockTI("_COBINIVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+__REFRESH := .T.;;
+
+ConOut("FIM VINDI B - Fatura " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;;;;
+VINDIC;04;2;Enviar Estorno;4;ConOut("INICIO ESTORNO VINDI - " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+
+If(Empty((aQuery[1][2]:cAlias)->PMV_VAR1) .And. ! aQuery[1][2]:lJob, Alert("Para estorno da cobrança é necessário que a fatura já esteja integrada com a Vindi"), Nil);;
+__EXIT := Empty((aQuery[1][2]:cAlias)->PMV_VAR1);;
+
+If(Val((aQuery[1][2]:cAlias)->PMV_VAR2) > 0 .And. ! aQuery[1][2]:lJob, Alert("Cobranca inicial do " + AllTrim((aQuery[1][2]:cAlias)->A1_NOME) + " ja foi estornada na VINDI com o ID [" + AllTrim((aQuery[1][2]:cAlias)->PMV_VAR2) + "]"), Nil);;
+__EXIT := Val((aQuery[1][2]:cAlias)->PMV_VAR2) > 0;;
+
+cMsgVld    := "";;
+cRetWsPad  := "";;
+cRetWsErro := "";;
+cPN4_CINTEG := "000010";;
+cPN4_PROCES := "000030";;
+PN4->(DbSeek(xFilial() + cPN4_CINTEG + cPN4_PROCES));;
+
+lErro := ! U_LockbyTI("_ESTCOBVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+
+If(lErro,ConOut("Erro no LockByTI VINDI"),"");;
+
+__EXIT := lErro;;
+
+U_FCsmWSAdq({}, cPN4_CINTEG, cPN4_PROCES, AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1), @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+
+If(ValType("cRetWsPad") == "U" .Or. cRetWsPad = "", ALERT(cRetWsErro), Nil);;
+
+lErro := If(ValType("cRetWsPad") == "U" .Or. cRetWsPad = "", .T., .F.);;
+If(lErro,U_UnLockTI("_ESTCOBVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+__EXIT := lErro;;
+
+oJson := Nil;;
+FWJsonDeserialize(cRetWsPad,@oJSon);;
+__ID := If(Type("oJson:BILL:CHARGES[1]:ID") == "N", AllTrim(Str(oJson:BILL:CHARGES[1]:ID)), Nil);;
+
+If(__ID == Nil, "Erro ao recuperar o ID [" + cRetWsPad + "]", Nil);;
+lErro := If(ValType("__ID") == "U", .T., .F.);;
+
+If(lErro,U_UnLockTI("_ESTCOBVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+__EXIT := lErro;;
+
+cPN4_PROCES := "000031";;
+PN4->(DbSeek(xFilial("PN4") + cPN4_CINTEG + cPN4_PROCES));;
+
+U_FCsmWSAdq('{ "amount": 1, "cancel_bill": true, "comments": "" }', cPN4_CINTEG, cPN4_PROCES, __ID + "/refund", @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+FWJsonDeserialize(cRetWsPad,@oJSon);;
+__ID := If(Type("oJson:charge:last_transaction:ID") == "N", AllTrim(Str(oJson:charge:last_transaction:ID)), Nil);;
+
+lErro := If(__ID == Nil, .T., Nil);;
+If(Type("lErro") == "L" .And. lErro,U_UnLockTI("_ESTCOBVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA)),);;
+
+__EXIT := lErro;;
+
+RECLOCK(aQuery[1][2]:cAlias, .F.);;
+(aQuery[1][2]:cAlias)->PMV_VAR2 := __ID;;
+(aQuery[1][2]:cAlias)->(MsUnLock());;
+
+PMV->(DbGoto((aQuery[1][2]:cAlias)->PMV_RECNO));;
+PMV->(RecLock("PMV", .F.));;
+PMV->PMV_VAR2 := __ID;;
+PMV->(MsUnLock());;
+
+RECLOCK("PN1", .T.);;
+PN1->PN1_FILIAL := xFilial("PN1");;
+PN1->PN1_ALIAS  := "PMV";;
+PN1->PN1_CPOCHV := "PMV_CCHV2";;
+PN1->PN1_CHVFUL := AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA);;
+PN1->PN1_CINTEG := cPN4_CINTEG;;
+PN1->PN1_DTMNT  := Date();;
+PN1->PN1_HRMNT  := Time();;
+PN1->PN1_OBSERR := If(aQuery[1][2]:lJob, "Enviado via JOB ", "Enviado por ação do usuário ") + cRetWsPad;;
+PN1->PN1_STATUS := "4";;
+PN1->(MsUnLock());;
+
+__REFRESH := .T.;;
+
+U_UnLockTI("_ESTCOBVINDI_" + AllTrim((aQuery[1][2]:cAlias)->A1_COD) + AllTrim((aQuery[1][2]:cAlias)->A1_LOJA));;
+
+ConOut("FIM ESTORNO VINDI - " + AllTrim((aQuery[1][2]:cAlias)->A1_COD));;
+;;;
+VINDIC;05;2;Legenda;4;aCores := {};;
+AAdd( aCores ,  {'BR_PRETO', 'Sem Credenciamento' });;
+AAdd( aCores ,  {'ENABLE','Cliente Credenciado'});;
+AAdd( aCores ,  {'BR_AZUL','Enviada Fatura Inicial'});;
+AAdd( aCores ,  {'BR_AMARELO','Estorno Recebido'});;
+
+BrwLegenda(cCadastro,"Legenda",aCores);;;;;
+VINDIF;01;2;Pesquisar;1;AxPesqui();;;
+VINDIF;02;2;Visualizar;2;AxVisual("PL3", PL3->(Recno()),2);;;
+VINDIF;03;4;Cancelar Fatura e Gerar Boleto;4;If((aQuery[1][2]:cAlias)->STATUS <> 'BR_AMARELO', MsgInfo("Só é permitido cancelar a fatura para geração do boleto após 5 dias da geração da fatura !"), .F.);;
+__EXIT := (aQuery[1][2]:cAlias)->STATUS <> 'BR_AMARELO';;
+
+PL3->(DbGoto((aQuery[1][2]:cAlias)->PL3_RECNO));;
+cFilAnt := PL3->PL3_FILIAL;;
+
+ConOut("INICIO VINDI - VINDIF_B - " + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;
+
+cRetWsPad   := "";;
+cRetWsErro  := "";;
+
+oJson := U_FT022VFT(AllTrim(PL3->PL3_IDTRAG), @cRetWsPad, @cRetWsErro);;
+__EXIT := If(! Type("oJson:bill:id") == "N" , (Alert("VINDIF - BOLETO - Não foi possível recuperar a fatura " + AllTrim(PL3->PL3_IDTRAG) + " !"), .T.), .F.);;
+
+cJson := cRetWsPad;;
+cEstorno := U_FT022VDL(AllTrim(PL3->PL3_IDTRAG), oJson:Bill:charges);;
+
+__EXIT := Empty(cEstorno);;
+
+SE1->(DbSetOrder(1));;
+cE1_PARCELA := Left(PL3->PL3_PARTIT + Space(Len(SE1->E1_PARCELA)), Len(SE1->E1_PARCELA));;
+SE1->(DbSeek(PL3->(PL3_FILIAL+PL3_PREFIX+PL3_NUMTIT+cE1_PARCELA+PL3_TIPTIT)));;
+
+M->PL3_ERROR  := "Boleto gerado por nao ter sido feita nenhuma tentativa de cobranca";;
+cBoletoFile := "Boleto-"+AllTrim(SE1->E1_NUM)+".PDF";;
+cBoletoPath := "\Boleto\EMP" + cEmpAnt + cFilAnt;;
+U_TFATA011( .T. /*cExcCC*/,.T. /*lAuto*/ , If(IsBlind(), .T., .F.) /* IsBlind() Job */ ,cBoletoFile,cBoletoPath, .F.);;
+cBoletoPath += "\" + cBoletoFile;;
+U_TF23Mail(PL3->PL3_CODCLI, PL3->PL3_LOJA, "", "", "", .F., cBoletoPath, 0, "TFATA023VindiSem.htm");;
+M->PL3_NUMBOR := SE1->E1_NUMBOR;;
+M->PL3_IDTRAG := "";;
+		
+cJson := "Estorno das Cobranças e Exclusão da Fatura [" + cEstorno + "]" + Chr(13) + Chr(10) + cJson;;
+
+PL3->(RecLock("PL3", .F.));;
+PL3->PL3_IDTRAG := M->PL3_IDTRAG;;
+PL3->PL3_ERROR  := M->PL3_ERROR;;
+PL3->PL3_CODRGA := IF(! Empty(PL3->PL3_ERROR), "1", "0");;
+PL3->PL3_ERROR  := M->PL3_ERROR;;
+PL3->PL3_OBS    := cJson;;
+PL3->PL3_NUMBOR := M->PL3_NUMBOR;;
+PL3->(MsUnLock());;
+
+ConOut("FIM VINDI - VINDIF_B - " + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;
+
+IF(SELECT("QRY") > 0, QRY->(DbCloseArea()), Nil);;
+
+IF(! oCQuery:lJob, __REFRESH := .T., Nil);;;;;
+VINDIF;04;4;Antecipar Cobranca;4;ConOut("INICIO VINDI - VINDIF_A - " + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;
+lErro := (aQuery[1][2]:cAlias)->STATUS = 'BR_AMARELO' .And. aQuery[1][2]:lJob;;
+ConOut("VINDI - VINDIF_A - STATUS " + If(lErro, ".T.", ".F."));;
+
+__EXIT := lErro;;
+
+lErro := (aQuery[1][2]:cAlias)->PL3_XERCNT > 5 .And. aQuery[1][2]:lJob;;
+If(lErro, Alert("Não é permitida a execução da antecipação de cobrança por mais de 5 vezes"), Nil);;
+
+ConOut("VINDI - VINDIF_A - PL3_XERCNT " + If(lErro, ".T.", ".F."));;
+
+__EXIT := lErro;;
+
+M->PL3_DATA03 := (aQuery[1][2]:cAlias)->PL3_DATA + 3;;
+M->PL3_DATA06 := (aQuery[1][2]:cAlias)->PL3_DATA + 6;;
+M->PL3_DATA09 := (aQuery[1][2]:cAlias)->PL3_DATA + 9;;
+M->PL3_DATA12 := (aQuery[1][2]:cAlias)->PL3_DATA + 12;;
+M->PL3_DATA15 := (aQuery[1][2]:cAlias)->PL3_DATA + 15;;
+
+lErro := (dDataBase <> M->PL3_DATA03 .AND. dDataBase <> M->PL3_DATA06 .AND. dDataBase <> M->PL3_DATA09 .AND. dDataBase <> M->PL3_DATA12 .AND. dDataBase <> M->PL3_DATA15);;
+
+If(lErro, Alert("É permitida a execução da antecipação somente 3, 6, 9, 12 ou 15 dias após a cobrança"), Nil);;
+
+ConOut("VINDI - VINDIF_A - PL3_DATA " + If(lErro, ".T.", ".F."));;
+
+__EXIT := lErro;;
+
+cMsgVld    := "";;
+cRetWsPad  := "";;
+cRetWsErro := "";;
+cPN4_CINTEG := "000010";;
+cPN4_PROCES := "000030";;
+PN4->(DbSeek(xFilial() + cPN4_CINTEG + cPN4_PROCES));;
+
+lErro := ! U_LockbyTI("VINDIF_A_" + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;
+If(lErro,ConOut("Erro no LockbyTI VINDIF_A: " + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG)),"");;
+
+__EXIT := lErro;;
+
+ConOut("VINDI - VINDIF_A antes da FCsmWSAdq [" + cPN4_PROCES + "]");;
+U_FCsmWSAdq({}, cPN4_CINTEG, cPN4_PROCES, AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG), @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+ConOut("VINDI - VINDIF_A depois da U_FCsmWSAdq [" + cPN4_PROCES + "] " + @cRetWsPad);;
+
+If(ValType("cRetWsPad") == "U" .Or. cRetWsPad = "", ALERT(cRetWsErro), Nil);;
+__EXIT := If(ValType("cRetWsPad") == "U" .Or. cRetWsPad = "", .T., .F.);;
+oJson := Nil;;
+FWJsonDeserialize(cRetWsPad,@oJSon);;
+__ID := If(Type("oJson:BILL:CHARGES[1]:ID") == "N", AllTrim(Str(oJson:BILL:CHARGES[1]:ID)), Nil);;
+
+If(__ID == Nil, ConOut("VINDI - VINDIF_A Erro ao recuperar o ID [" + cRetWsPad + "]"), Nil);;
+__EXIT := If(ValType("__ID") == "U", .T., .F.);;
+
+cPN4_PROCES := "000031";;
+PN4->(DbSeek(xFilial("PN4") + cPN4_CINTEG + cPN4_PROCES));;
+
+ConOut("VINDI - VINDIF_A antes da FCsmWSAdq [" + cPN4_PROCES + "]");;
+
+U_FCsmWSAdq("", cPN4_CINTEG, cPN4_PROCES, __ID + "/charge", @cMsgVld , Alltrim( PN4->PN4_USRWSE ), @cRetWsPad , @cRetWsErro , Nil);;
+
+ConOut("VINDI - VINDIF_A depois da U_FCsmWSAdq " + @cRetWsPad);;
+
+If(ValType("cRetWsPad") == "U", ALERT(cRetWsErro), Nil);;
+
+lErro := If(ValType("cRetWsPad") == "U", .T., .F.);;
+If(lErro,U_UnlockTi("VINDIF_A_" + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG)),);;
+
+__EXIT := lErro;;
+
+RECLOCK(aQuery[1][2]:cAlias, .F.);;
+(aQuery[1][2]:cAlias)->PL3_XERCNT := (aQuery[1][2]:cAlias)->PL3_XERCNT + 1;;
+(aQuery[1][2]:cAlias)->(MsUnLock());;
+
+PL3->(DbGoto((aQuery[1][2]:cAlias)->PL3_RECNO));;
+RECLOCK("PL3", .F.);;
+PL3->PL3_XERCNT := PL3->PL3_XERCNT + 1;;
+PL3->(MSUNLOCK());;
+
+RECLOCK("PN1", .T.);;
+PN1->PN1_FILIAL := xFilial("PN1");;
+PN1->PN1_ALIAS  := "PL3";;
+PN1->PN1_RCNALS := PL3->(Recno());;
+PN1->PN1_CHVFUL := AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG);;
+PN1->PN1_CINTEG := cPN4_CINTEG;;
+PN1->PN1_DTMNT  := Date();;
+PN1->PN1_HRMNT  := Time();;
+PN1->PN1_OBSERR := "Antecipar Cobranca" + Chr(13) + Chr(10) + If(aQuery[1][2]:lJob, "Enviado via JOB ", "Enviado por ação do usuário ") + cRetWsPad;;
+PN1->PN1_STATUS := "4";;
+PN1->(MsUnLock());;
+
+U_UnlockTi("VINDIF_A_" + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;
+IF(! oCQuery:lJob, __REFRESH := .T., Nil);;
+
+ConOut("FIM VINDI - VINDIF_A - " + AllTrim((aQuery[1][2]:cAlias)->PL3_IDTRAG));;;;;
+VINDIF;05;2;Legenda;3;aCores := {};;
+AAdd( aCores ,  {'BR_PRETO', 'Cobrança Pendente' });;
+AAdd( aCores ,  {'BR_AMARELO','Cancelar Fatura e Gerar Boleto'});;
+
+BrwLegenda(cCadastro,"Legenda",aCores);;;;;
+VINDII;01;4;Canc Fatura Verificação;0;cRetWsPad   := "";;
+cRetWsErro  := "";;
+
+oJson := U_FT022VFT(AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1), @cRetWsPad, @cRetWsErro);;
+__EXIT := If(! Type("oJson:bill:id") == "N" , (Alert("Não foi possível recuperar a fatura " + AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1) + " !"), .T.), .F.);;
+		  	     	   
+cJson := cRetWsPad;;
+cEstorno := U_FT022VDL(AllTrim((aQuery[1][2]:cAlias)->PMV_VAR1), oJson:Bill:charges);;
+
+__EXIT := Empty(cEstorno);;
+
+PMV->(DBGOTO((aQuery[1][2]:cAlias)->PMV_RECNO));;
+PMV->(RecLock("PMV", .F.));;
+PMV->PMV_VAR2 := cEstorno;;
+PMV->(MsUnLock());;;;;
+VINDIL;01;2;Pesquisar;1;AxPesqui();;;
+VINDIL;02;2;Visualizar;2;PN1->(DbGoto((oCQuery:cAlias)->PN1_RECNO));;
+AxVisual("PN1", (oCQuery:cAlias)->PN1_RECNO, 2);;;
+XA4;01;2;Copiar;3;DBSELECTAREA("XA4");;
+DbGoTop();;
+__dbCopy("C:\TEMP\XA4.DTC", { },,,,, .F., "CTREECDX" );;;
+ZL1;01;2;Pesquisar;1;AxPesqui();;;
+ZL1;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("ZL1", ZL1->(Recno()),2);;;
+ZL1;03;2;Incluir;3;cCadastro:= oCQuery:cCadastro;;
+AxInclui("ZL1", 0,3);;;
+ZL1;04;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("ZL1", ZL1->(Recno()), 4,,, , , , , , , aParam );;;
+ZL1;05;2;Excluir;5;cCadastro:= oCQuery:cCadastro;;
+AxDeleta("ZL1", ZL1->(Recno()),5);;;
+ZX5;01;2;Pesquisar;1;AxPesqui();;;
+ZX5;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("ZX5", ZX5->(Recno()),2)
+;;;
+ZX5;03;2;Incluir;3;cCadastro:= oCQuery:cCadastro;;
+AxInclui("ZX5", 0,3)
+;;;
+ZX5;04;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("ZX5", ZX5->(Recno()), 4,,, , , , , , , aParam );;;
+ZX5;05;2;Excluir;5;cCadastro:= oCQuery:cCadastro;;
+AxDeleta("ZX5", ZX5->(Recno()),5);;;

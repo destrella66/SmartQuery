@@ -1,0 +1,3 @@
+PQ1;01;2;Pesquisar;1;AxPesqui();;;
+PQ1;02;2;Exportar;3;U_TRG10Exp();;;
+PQ1;03;2;Importar;3;U_TRG10Imp();;;

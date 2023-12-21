@@ -1,0 +1,17 @@
+SF2;01;2;Pesquisar;1;AxPesqui();;;
+SF2;02;2;Enviar DataBus;4;ParamIXB := { SF2->F2_SERIE, SF2->F2_DOC };;
+lOk := .T.
+
+u_F022ATUNF()
+
+cJson := "{"
+cJson += '"customerId":"' + SA1->A1_HASHID+'",'
+cJson += '"number":'+AllTrim(Str(Val(SF2->F2_DOC)))+","
+cJson += '"serie":'+AllTrim(Str(Val(SF2->F2_SERIE)))+","
+cJson += '"hash":"'+"hash-verification-code" + '",'
+cJson += '"order":"'+SD2->D2_PEDIDO+'"'
+cJson += If(lOk, ',"billId":"'+SC5->C5_XFATURA+'",', "")
+cJson += If(lOk, '"issuedAt":"'+DTOC(SF2->F2_EMISSAO)+'"', "")
+cJson += "}"
+
+Alert(cJson);;;

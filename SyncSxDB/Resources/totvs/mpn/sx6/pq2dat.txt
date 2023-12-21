@@ -1,0 +1,7 @@
+SX6;01;N;X6_FIL;Filial;;;1;11;0;;0;N;;1;;;
+SX6;02;N;X6_VAR;Variavel;;;1;10;0;;0;N;;1;;;
+SX6;03;N;X6_TIPO;Tipo;;;1;1;0;;0;N;;1;;;
+SX6;04;N;X6_DESCRIC;Descricao;;;1;50;0;;0;N;;1;;;
+SX6;05;N;X6_DESC1;Descricao 1;;;1;50;0;;0;N;;1;;;
+SX6;06;N;X6_DESC2;Descricao 2;;;1;50;0;;0;N;;1;;;
+SX6;07;N;X6_CONTEUD;Conteudo;;;1;50;0;;0;N;;1;;;

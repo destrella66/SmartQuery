@@ -1,0 +1,17 @@
+PZZ;01;S;PZZ_CODASS;Assinatura;;;1;36;0;;0;N;;1;;;
+PZZ;02;S;PZZ_CNPJ;Cnpj;;;1;14;0;;0;N;;1;;;
+PZZ;03;S;PZZ_DTASS;Data;;;4;8;0;;0;N;;1;;;
+PZZ;04;S;PZZ_STATUS;Status;;;1;1;0;;0;N;;1;;;
+PZZ;05;S;PZZ_CODCLI;Cliente;;;1;6;0;;0;N;;1;;;
+PZZ;06;S;PZZ_CODPRO;Produto;;;1;15;0;;0;N;;1;;;
+PZZ;07;S;PZZ_PERIOD;Periodicidad;;;2;2;0;@R 99;0;N;;1;;;
+PZZ;08;S;PZZ_QUANT;Quantidade;;;2;12;4;@E 9,999,999.9999;0;N;;1;;;
+PZZ;09;S;PZZ_VLUNIT;Val. Unit.;;;2;16;6;@E 999,999,999.99999;0;N;;1;;;
+PZZ;10;S;PZZ_VLTOT;Vl. Total;;;2;15;2;@E 999,999,999,999.9;0;N;;1;;;
+PZZ;11;S;PZZ_CAREN;Carencia;;;2;2;0;@R 99;0;N;;1;;;
+PZZ;12;S;PZZ_UNINEG;Unidade;;;1;11;0;;0;N;;1;;;
+PZZ;13;S;PZZ_XITCTA;Item Conta;;;1;9;0;;0;N;;1;;;
+PZZ;14;S;PZZ_XCLVL;Classe de Vl;;;1;9;0;;0;N;;1;;;
+PZZ;15;S;PZZ_XCCUST;Centro Custo;;;1;9;0;;0;N;;1;;;
+PZZ;16;S;PZZ_DTCAN;Cancelamento;;;4;8;0;;0;N;;1;;;
+PZZ;17;S;PZZ_CMPCAN;Comp. Canc;;;1;7;0;;0;N;;1;;;

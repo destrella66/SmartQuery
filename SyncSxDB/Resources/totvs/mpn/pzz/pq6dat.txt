@@ -1,0 +1,17 @@
+PZZ;01;2;Pesquisar;1;AxPesqui();;;
+PZZ;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PZZ", PZZ->(Recno()),2);;;
+PZZ;03;2;Incluir;3;cCadastro:= oCQuery:cCadastro;;
+AxInclui("PZZ", 0,3);;;
+PZZ;04;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("PZZ", PZZ->(Recno()), 4,,, , , , , , , aParam );;;
+PZZ;05;2;Excluir;5;cCadastro:= oCQuery:cCadastro;;
+AxDeleta("PZZ", PZZ->(Recno()),5);;;
+PZZ;06;2;Importar;3;Alert(RetCodUsr());;
+nTypeImp := 2;;
+__ALIAS := aQuery[1][2]:cAlias;;
+U_TRGXLCSV()
+
+;;;
+PZZ;07;2;Excluir Calculo;4;MsAguarde({|| U_ExecSQL(M->PQ6_SQL) },"Aguarde...","Deletando temporario");;;DELETE FROM <ADVPL>RetSqlName("PHK")</ADVPL> WHERE PHK_FILIAL = ' ' AND PHK_VIGINI > '20220401';;

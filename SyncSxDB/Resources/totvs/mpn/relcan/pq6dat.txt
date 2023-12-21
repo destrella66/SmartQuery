@@ -1,0 +1,83 @@
+RELCAN;01;2;Solicitar Relatorio;3;_aRegs := {};;
+_aRet := {};;
+cMailUser := AllTrim(Lower(UsrRetMail(RetCodUsr())));;
+cMailUser := If(empty(cMailUser),Space(100),cMailUser);;
+
+AADD(_aRegs,{1,"Data Efetiva Cancelamento de"  ,CTOD(SPACE(8)),PesqPict("SF2","F2_EMISSAO"),".T.","",".T.",60,.F.});;
+AADD(_aRegs,{1,"Data Efetiva Cancelamento Até" ,CTOD(SPACE(8)),PesqPict("SF2","F2_EMISSAO"),".T.","",".T.",60,.F.});;
+AADD(_aRegs,{1,"Data Solicitação de"      ,CTOD(SPACE(8)),PesqPict("SF2","F2_EMISSAO"),".T.","",".T.",60,.F.});;
+AADD(_aRegs,{1,"Data Solicitação Até"     ,CTOD(SPACE(8)),PesqPict("SF2","F2_EMISSAO"),".T.","",".T.",60,.F.});;
+AADD(_aRegs,{1,"Cliente"                  ,Space(6),"@!",'empty(mv_par05) .OR. ExistCpo("SA1")','SA1','.T.',,.F.})
+AADD(_aRegs,{1,"Loja"                     ,Space(2),"@!",'','','.T.',,.F.})
+AADD(_aRegs,{1,"e-mail"	                  ,cMailUser,,"';' $ mv_par07 .or. isemail(mv_par07)","",".T.",100,.T.});;
+
+__EXIT := ! ParamBox(_aRegs,"Parametros do Relatório",_aRet);;
+
+cCNPJ := if(!Empty(mv_par05),Alltrim(SA1->A1_CGC),"");;
+
+_vazio1 := !(!empty(mv_par01) .And. !empty(mv_par02));;
+_vazio2 := !(!empty(mv_par03) .And. !empty(mv_par04));;
+
+_vazio1_t := (_vazio1 .AND. _vazio2) .OR. (!_vazio1 .AND. !_vazio2) 
+
+__EXIT := Eval({|| If(_vazio1_t, (Alert("Preencha as Datas de Solicitacao ou Efetiva Cancelamento !"),.T.),.F.)});;
+
+requestde  := if(!empty(mv_par01),FWTimeStamp(3,mv_par01,"00:00:00"),"");;
+requestate := if(!empty(mv_par02),FWTimeStamp(3,mv_par02,"00:00:00"),"");;
+cancelede  := if(!empty(mv_par03),FWTimeStamp(3,mv_par03,"00:00:00"),"");;
+canceleate := if(!empty(mv_par04),FWTimeStamp(3,mv_par04,"00:00:00"),"");;
+
+cPostJson := '{"reportType":"CANCEL_REPORT",';;
+cPostJson += ' "sendTo": "'+Alltrim(mv_par07)+'",';;
+cPostJson += ' "filters": {';;
+cPostJson += ' "cancellationRequestedStart":"'+requestde+'",';;
+cPostJson += ' "cancellationRequestedEnd":"'+requestate+'",';; 
+cPostJson += ' "acessUntilStart":"'+cancelede+'",';;
+cPostJson += ' "accessUntilEnd":"'+canceleate+'",';;
+cPostJson += ' "customer":"'+cCNPJ+'"';;
+cPostJson += '}';;
+cPostJson += '}';;
+
+aTokenWsO2 := { .F., "", "" };;
+MsAguarde({|| aTokenWsO2 := U_TkAwsMnt() },"Aguarde...","Solicitando o token");;
+
+If(! aTokenWsO2[1][1], RECLOCK("P01", .T.), Nil);;
+If(! aTokenWsO2[1][1], P01->P01_ROTINA := "RELCAN", Nil);;
+If(! aTokenWsO2[1][1], P01->P01_DTSOLI := Date(), Nil);;
+If(! aTokenWsO2[1][1], P01->P01_USER := __cUserId, Nil);;
+If(! aTokenWsO2[1][1], P01->P01_EMAIL := Alltrim(mv_par07), Nil);;
+If(! aTokenWsO2[1][1], P01->P01_HRSOLI := StrTran(Time(), ":", ""), Nil);;
+If(! aTokenWsO2[1][1], P01->P01_REQST := cPostJson, Nil);;
+If(! aTokenWsO2[1][1], P01->P01_RESPON := "Erro Solicitação Token" + aTokenWsO2[1][3] + ' ' + aTokenWsO2[1][2], Nil);;
+If(! aTokenWsO2[1][1], P01->(MsUnLock()), Nil);;
+
+If(! aTokenWsO2[1][1], MsgInfo("Erro ao solicitar token para o relatorio de Cancelamento !"), Nil)
+__EXIT := ! aTokenWsO2[1][1];;
+
+aHeadAPI := {}
+AADD(aHeadAPI,'Authorization: ' + aTokenWsO2[1][3] + ' ' + aTokenWsO2[1][2]);;
+cToken := 'Authorization: ' + aTokenWsO2[1][3] + ' ' + aTokenWsO2[1][2];;
+
+cRetWsPad := "";;
+cRetWsErro := "";;
+
+MsAguarde({|| U_FCsmWSCg( cPostJson , Alltrim(SuperGetmv('TM_AWSURLM',.F.,"https://databus-api.totvs.com.br/v1")), "/reports", "3",  Nil , Nil , @cRetWsPad , @cRetWsErro , aHeadAPI ) },"Aguarde...","Solicitando o relatório");;
+
+oJSon := nil;;
+If(! Empty(cRetWsPad), FWJsonDeserialize(cRetWsPad,@oJSon), Nil);;
+lOk := ( oJson <> Nil .And. Type("oJSon:status") <> "U" .And. oJSon:status == 'success' );;
+
+RECLOCK("P01", .T.);;
+P01->P01_ROTINA := "RELCAN";;
+P01->P01_DTSOLI := Date();;
+P01->P01_USER := __cUserId;;
+P01->P01_EMAIL := Alltrim(mv_par07);;
+P01->P01_HRSOLI := StrTran(Time(), ":", "");;
+P01->P01_PARAM := "";;
+P01->P01_REQST := cPostJson;;
+P01->P01_RESPON := cRetWsPad + If(!Empty(cRetWsPad) .And. Empty(cRetWsErro), Chr(13) + Chr(10), "") + cRetWsErro + Chr(13) + Chr(10) + cToken;;
+P01->(MsUnLock());;
+
+If(lOk, MsgInfo("Relatório de Cancelamento solicitado com sucesso ! "+Chr(13)+Chr(10)+" O e-mail sera encaminhado com o link para Download."), Alert("Erro ao solicitar relatório de Cancelamento !"));;;;;
+RELCAN;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("P01", P01->(Recno()),2);;;

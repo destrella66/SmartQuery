@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "title": "Person Table",
+  "fields": [
+    { "property": "id", "key": true, "disabled": true },
+    { "property": "status" },
+    { "property": "name" },
+    { "property": "nickname" },
+    { "property": "birthdate", "label": "Birth date" },
+    { "property": "genre" },
+    { "property": "city" },
+    { "property": "country" }
+  ],
+  "keepFilters": true,
+  "people": [
+    {
+      "id": 1,
+      "status": "Active",
+      "name": "John Doe",
+      "nickname": "JD",
+      "birthdate": "1985-07-15",
+      "genre": "Male",
+      "city": "New York",
+      "country": "USA"
+    },
+    {
+      "id": 2,
+      "status": "Inactive",
+      "name": "Jane Smith",
+      "nickname": "JS",
+      "birthdate": "1990-03-22",
+      "genre": "Female",
+      "city": "Los Angeles",
+      "country": "USA"
+    },
+    // ... (adicionar mais pessoas para completar até 40)
+    {
+      "id": 39,
+      "status": "Active",
+      "name": "Sophia Brown",
+      "nickname": "SB",
+      "birthdate": "1987-09-28",
+      "genre": "Female",
+      "city": "London",
+      "country": "UK"
+    },
+    {
+      "id": 40,
+      "status": "Active",
+      "name": "Luis Martinez",
+      "nickname": "LM",
+      "birthdate": "1992-04-10",
+      "genre": "Male",
+      "city": "Mexico City",
+      "country": "Mexico"
+    }
+  ]
+}

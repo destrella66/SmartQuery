@@ -1,0 +1,8 @@
+ADYCPY;01;I_ADY_PROPOS;Proposta Inicial;1;6;0;;;;;N;N;;
+ADYCPY;02;F_ADY_PROPOS;Proposta Final;1;6;0;;;;;N;N;;
+ADYCPY;03;I_ADY_DATA;Data Inicial;4;8;0;;CTOD("01/01/2020");;;N;N;;Data Inicial
+ADYCPY;04;F_ADY_DATA;Data Final;4;8;0;;CTOD("31/12/2020");;;N;N;;Data Final
+ADYCPY;05;BM_XLINREC;Linha Receita;1;4;0;;;AOMSBM;;N;N;;
+ADYCPY;06;ADY_XMODAL;Modalidade;1;4;0;;;AOMPNH;;N;N;;Modalidade da Proposta (Opcional)
+ADYCPY;07;USA_MARK;Desconsiderar Marcacao ?;1;1;0;;"2";;1=SIM;2=NAO;N;N;;
+ADYCPY;08;Q_ADY_DATA;Data Original Proposta ?;1;1;0;;"2";;1=SIM;2=NAO;N;N;;

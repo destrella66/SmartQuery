@@ -1,0 +1,10 @@
+PQ9;01;1;Pesquisar;1;AxPesqui();;;
+PQ9;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PQ9", PQ9->(Recno()),2);;;
+PQ9;03;2;Incluir;3;cCadastro:= oCQuery:cCadastro;;
+AxInclui("PQ9", 0,3);;;
+PQ9;04;2;Alterar;4;cCadastro:= oCQuery:cCadastro;;
+aParam  := { { || .T. }, { || .T. }, { || .T. }, { || .T. } };;
+AxAltera("PQ9", PQ9->(Recno()), 4,,, , , , , , , aParam );;;
+PQ9;05;2;Excluir;5;cCadastro:= oCQuery:cCadastro;;
+AxDeleta("PQ9", PQ9->(Recno()),5);;;

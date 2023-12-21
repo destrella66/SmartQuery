@@ -1,0 +1,3 @@
+PMU;01;PMU_CINTEG;Empresa;1;6;0;;;PN2;;N;N;;
+PMU;02;I_PMU_DTPRPE;Data Inicial;4;8;0;;;;;N;N;;
+PMU;03;F_PMU_DTPRPE;Data Final;4;0;0;;;;;N;N;;

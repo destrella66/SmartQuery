@@ -1,0 +1,66 @@
+PMU;01;2;Pesquisar;1;AxPesqui();;;
+PMU;02;2;Copia Propostas;4;PMU->(DbSetOrder(2));;
+aStruPMU := PMU->(DbStruct());;
+
+PMW->(DbSetOrder(1));;
+aStruPMW := PMW->(DbStruct());;
+
+PN6->(DbSetOrder(1));;
+aStruPN6 := PN6->(DbStruct());;
+
+MsAguarde({|| U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}) },"Aguarde...","Copiando Propostas");;;__SKIP := .F.;;
+
+PMU->(DbSeek(xFilial() + (aQuery[1][2]:Alias())->PMU_IDSEQ));;
+
+M->PMW_IDSEQ  := PMU->PMU_IDSEQ;;
+M->PMU_IDSEQ  := GETSXENUM( "PMU", "PMU_IDSEQ" );;
+M->PMU_PRPEXT := AllTrim(PMU->PMU_PRPEXT) + "-1";;
+ConfirmSX8();;
+
+aDados := {};;
+Aadd(aDados, { "PMU_IDSEQ" ,  M->PMU_IDSEQ });;
+Aadd(aDados, { "PMU_STPRPE",  "3" });;
+Aadd(aDados, { "PMU_DTPRPE",  Date() });;
+Aadd(aDados, { "PMU_HRPRPE",  Time() });;
+Aadd(aDados, { "PMU_OPORTU",  "" });;
+Aadd(aDados, { "PMU_DTOPOR",  Ctod("") });;
+Aadd(aDados, { "PMU_HROPOR",  "" });;
+Aadd(aDados, { "PMU_PROPOS",  "" });;
+Aadd(aDados, { "PMU_DTPROP",  Ctod("") });;
+Aadd(aDados, { "PMU_HRPROP",  "" });;
+Aadd(aDados, { "PMU_CONTRA",  "" });;
+Aadd(aDados, { "PMU_DTCONT",  CTOD("") });;
+Aadd(aDados, { "PMU_HRCONT",  "" });;
+Aadd(aDados, { "PMU_PRPEXT",  M->PMU_PRPEXT });;
+Aadd(aDados, { "PMU_MEDIC", "" });;
+Aadd(aDados, { "PMU_DTMED", CTOD("") });;
+Aadd(aDados, { "PMU_HRMED", "" });;
+Aadd(aDados, { "PMU_PEDVEN", "" });;
+Aadd(aDados, { "PMU_DTPEDV", CTOD("") });;
+Aadd(aDados, { "PMU_HRPDEV", "" });;
+Aadd(aDados, { "PMU_NOTA", "" });;
+Aadd(aDados, { "PMU_SERIE", "" });;
+Aadd(aDados, { "PMU_DTNF", CTOD("") });;
+Aadd(aDados, { "PMU_HRNF", "" });;
+
+bChave := { || PMU->PMU_FILIAL + PMU->PMU_IDSEQ == xFilial("PMW") + M->PMW_IDSEQ };;
+bCopy := { || PMU->(U_CopyRec(aStruPMU, aDados)) };;
+(MsAguarde({|| PMU->(U_TRGWHILE("PMU", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando propostas de integração de adquiridas [" + PMU->PMU_PROPOS + "]"), __EXIT := .F.);;
+
+PMW->(DbSeek(xFilial() + M->PMW_IDSEQ));;
+bChave := { || PMW->PMW_FILIAL + PMW->PMW_IDSEQ == xFilial("PMW") + M->PMW_IDSEQ };;
+aDados := {};;
+Aadd(aDados, { "PMW_IDSEQ", M->PMU_IDSEQ });;
+Aadd(aDados, { "PMW_PRPEXT",  M->PMU_PRPEXT });;
+bCopy := { || PMW->(U_CopyRec(aStruPMW, aDados)) };;
+
+(MsAguarde({|| PMW->(U_TRGWHILE("PMW", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando itens da propostas de integração de adquiridas [" + PMU->PMU_PROPOS + "]"), __EXIT := .F.);;
+
+aDados := {};;
+Aadd(aDados, { "PN6_IDSEQ", M->PMU_IDSEQ });;
+bCopy := { || PN6->(U_CopyRec(aStruPN6, aDados)) };;
+(MsAguarde({|| PN6->(U_TRGWHILE("PN6", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando propostas de integração de adquiridas [" + PMU->PMU_PROPOS + "]"), __EXIT := .F.);;
+
+__SKIP := Nil;If((aQuery[1][2]:cAlias)->PMU_OK = aQuery[1][4]:cMark .Or. mv_par07 = '1', U_ExcAdvpl(ALLTRIM(M->PQ6_SQL)), Nil);Eval(bCopy);;
+DbSkip();;
+__EXIT := ! Eval(bChave)

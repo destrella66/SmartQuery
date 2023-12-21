@@ -1,0 +1,1 @@
+RELBON;RELATORIO DE BONIFICACAO;69;20210809;;38;2;P01;0;;;"P01->P01_ROTINA = 'RELBON'";2;01;;;1;2;0;;;1;;lb;;;Este formulario permite a solicitação do Relatorio Bonificação ( Desconto Consumido ) MPN

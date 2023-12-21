@@ -1,0 +1,5 @@
+PQ9;01;S;PQ9_ID;ID Consulta;;;1;6;0;;0;N;;1;;;
+PQ9;02;S;PQ9_USER;Usuario;;;1;6;0;;0;N;;1;;;
+PQ9;03;S;PQ9_LINHA;Ordem;;;1;2;0;;0;N;;1;;;
+PQ9;04;S;PQ9_ROTINA;Rotina;;;1;60;0;;0;N;;1;;;
+PQ9;05;S;PQ9_ACESSO;Acesso;;;1;1;0;;0;N;;1;;;

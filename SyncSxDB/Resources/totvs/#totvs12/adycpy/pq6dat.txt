@@ -1,0 +1,98 @@
+ADYCPY;01;2;Pesquisar;1;AxPesqui();;;
+ADYCPY;02;2;Copiar Propostas;4;AD1->(DbSetOrder(1));;
+aStruAD1 := AD1->(DbStruct());;
+
+AD2->(DbSetOrder(1));;
+aStruAD2 := AD2->(DbStruct());;
+
+ADJ->(DbSetOrder(1));;
+aStruADJ := ADJ->(DbStruct());;
+
+ADY->(DbSetOrder(1));;
+aStruADY := ADY->(DbStruct());;
+
+ADZ->(DbSetOrder(3));;
+aStruADZ := ADZ->(DbStruct());;
+
+PKI->(DbSetOrder(1));;
+aStruPKI := PKI->(DbStruct());;
+
+AZG->(DbSetOrder(1));;
+aStruAZG := AZG->(DbStruct());;
+
+AZM->(DbSetOrder(1));;
+aStruAZM := AZM->(DbStruct());;
+
+PLA->(DbSetOrder(1));;
+aStruPLA := PLA->(DbStruct());;
+
+ZAV->(DbSetOrder(1));;
+aStruZAV := ZAV->(DbStruct());;
+
+MsAguarde({|| U_TRGWHILE((aQuery[1][2]:cAlias), ALLTRIM(M->PQ6_GDVPL), {}) },"Aguarde...","Copiando Propostas");;;AD1->(DbSeek(xFilial() + (aQuery[1][2]:cAlias)->ADY_OPORTU));;
+M->AD1_NROPOR := GetSxeNum("AD1", "AD1_NROPOR");;
+AD1->(U_CopyRec(aStruAD1, { { "AD1_NROPOR",  M->AD1_NROPOR} }));;
+ConfirmSX8();;
+
+AD1->(DbSeek(xFilial() + (aQuery[1][2]:cAlias)->ADY_OPORTU));;
+
+__SKIP := .F.;;
+
+AD2->(DbSeek(xFilial() + AD1->(AD1_NROPOR + AD1_REVISA)));;
+bChave := { || AD2_FILIAL + AD2_NROPOR + AD2_REVISA == AD1->(AD1_FILIAL + AD1_NROPOR + AD1_REVISA) }
+bCopy := { || AD2->(U_CopyRec(aStruAD2, { { "AD2_NROPOR",  M->AD1_NROPOR} })) };;
+
+(MsAguarde({|| AD2->(U_TRGWHILE("AD2", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando Time de vendas [" + M->AD1_NROPOR + "]"), __EXIT := .F.);;
+
+ADJ->(DbSeek(xFilial() + AD1->(AD1_NROPOR + AD1_REVISA)));;
+bChave := { || ADJ_FILIAL + ADJ_NROPOR + ADJ_REVISA == AD1->(AD1_FILIAL + AD1_NROPOR + AD1_REVISA) }
+bCopy := { || ADJ->(U_CopyRec(aStruADJ, { { "ADJ_NROPOR",  M->AD1_NROPOR} })) };;
+
+(MsAguarde({|| ADJ->(U_TRGWHILE("ADJ", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando Agrupadores [" + M->AD1_NROPOR + "]"), __EXIT := .F.);;
+
+ADY->(DbSeek(xFilial() + (aQuery[1][2]:cAlias)->ADY_PROPOS));;
+M->ADY_PROPOS := GetSxeNum("AD1", "ADY_PROPOS");;
+ADY->(U_CopyRec(aStruADY, { { "ADY_PROPOS", M->ADY_PROPOS}, { "ADY_OPORTU", M->AD1_NROPOR}, { "ADY_STATUS", "H" }, { "ADY_DATA", if(mv_par08 = "1", ADY->ADY_DATA, dDataBase) }, { "ADY_DTAPRO", Ctod("") }, { "ADY_HRAPRO", "" }, { "ADY_USRAPR", "" }, { "ADY_DTPDV", Ctod("") }, { "ADY_HRPDV", "" }, { "ADY_USRPDV", "" }, { "ADY_DTFAT", Ctod("") }, { "ADY_HRFAT", "" },{"ADY_LOGTEC",""},{"ADY_CODMJO",""},{"ADY_DTMJOB",Ctod("")},{"ADY_HRMJOB",""},{"ADY_LOGTEC",""},{"ADY_HRMJPV",""},{"ADY_XDTMED",Ctod("")},{"ADY_XSRMED",""},{"ADY_XIDFAT",""},{ "ADY_DTUPL", dDataBase }}));;
+ConfirmSX8();;
+
+ADY->(DbSeek(xFilial() + (aQuery[1][2]:cAlias)->ADY_PROPOS));;
+
+ADZ->(DbSeek(xFilial() + ADY->(ADY_PROPOS + ADY_PREVIS)));;
+bChave := { || ADZ_FILIAL + ADZ_PROPOS + ADZ_REVISA == ADY->(ADY_FILIAL+ADY_PROPOS + ADY_PREVIS) }
+bCopy := { || ADZ->(U_CopyRec(aStruADZ, { { "ADZ_PROPOS",  M->ADY_PROPOS },  { "ADZ_DT1VEN",  MonthSum( dDataBase , 1 ) },  { "ADZ_XCOMPE",  U_ADZ_DT1V() }, { "ADZ_XNF",  "" }, { "ADZ_XSERNF",  "" }, { "ADZ_XFILNF",  "" }, { "ADZ_XITENF",  "" } })) };;
+
+(MsAguarde({|| ADZ->(U_TRGWHILE("ADZ", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando Itens da Proposta [" + ADZ->ADZ_PROPOS + "]"), __EXIT := .F.);;
+
+PKI->(DbSeek(xFilial() + ADY->(ADY_PROPOS + ADY_PREVIS)));;
+bChave := { || PKI_FILIAL + PKI_PROPOS + PKI_PREVIS == ADY->(ADY_FILIAL+ADY_PROPOS + ADY_PREVIS) }
+bCopy := { || PKI->(U_CopyRec(aStruPKI, { { "PKI_PROPOS",  M->ADY_PROPOS} })) };;
+
+(MsAguarde({|| ADJ->(U_TRGWHILE("PKI", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando Parcelas da Proposta [" + ADY->ADY_PROPOS + "]"), __EXIT := .F.);;
+
+AZG->(DbSeek(xFilial() + ADY->(ADY_PROPOS + ADY_PREVIS)));;
+bChave := { || AZG_FILIAL + AZG_PROPOS + AZG_REVISA == ADY->(ADY_FILIAL+ADY_PROPOS + ADY_PREVIS) }
+bCopy := { || AZG->(U_CopyRec(aStruAZG, { { "AZG_PROPOS",  M->ADY_PROPOS} })) };;
+
+(MsAguarde({|| AZG->(U_TRGWHILE("AZG", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando rateio da Proposta [" + ADY->ADY_PROPOS + "]"), __EXIT := .F.);;
+
+AZM->(DbSeek(xFilial() + ADY->(ADY_PROPOS + ADY_PREVIS)));;
+bChave := { || AZM_FILIAL + AZM_PROPOS + AZM_REVISA == ADY->(ADY_FILIAL+ADY_PROPOS + ADY_PREVIS) }
+bCopy := { || AZM->(U_CopyRec(aStruAZM, { { "AZM_PROPOS",  M->ADY_PROPOS} })) };;
+
+(MsAguarde({|| AZM->(U_TRGWHILE("AZM", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando resumo do rateio [" + ADY->ADY_PROPOS + "]"), __EXIT := .F.);;
+
+PLA->(DbSeek(xFilial() + ADY->(ADY_PROPOS + ADY_PREVIS)));;
+bChave := { || PLA_FILIAL + PLA_PROPOS + PLA_REVISA == ADY->(ADY_FILIAL+ADY_PROPOS + ADY_PREVIS) }
+bCopy := { || PLA->(U_CopyRec(aStruPLA, { { "PLA_PROPOS",  M->ADY_PROPOS} })) };;
+
+(MsAguarde({|| PLA->(U_TRGWHILE("PLA", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando rateio de CRM por Produto [" + ADY->ADY_PROPOS + "]"), __EXIT := .F.);;
+
+ZAV->(DbSeek(xFilial() + ADY->(ADY_PROPOS)));;
+bChave := { || ZAV_FILIAL + ZAV_CODIGO == ADY->(ADY_FILIAL+ADY_PROPOS) }
+bCopy := { || ZAV->(U_CopyRec(aStruZAV, { { "ZAV_CODIGO",  M->ADY_PROPOS} })) };;
+
+(MsAguarde({|| ZAV->(U_TRGWHILE("ZAV", ALLTRIM(M->PQ6_GSQL), {}, .F.) ) },"Aguarde...","Copiando faixas do corporativo [" + ADY->ADY_PROPOS + "]"), __EXIT := .F.);;
+
+__SKIP := Nil;If((aQuery[1][2]:cAlias)->ADY_OK = aQuery[1][4]:cMark .Or. mv_par07 = '1', U_ExcAdvpl(ALLTRIM(M->PQ6_SQL)), Nil);Eval(bCopy);;
+DbSkip();;
+__EXIT := ! Eval(bChave)

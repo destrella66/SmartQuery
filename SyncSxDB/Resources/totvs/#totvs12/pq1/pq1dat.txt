@@ -1,0 +1,1 @@
+PQ1;CONSULTAS;05;20200812;;1;2;PQ1;1;PQ1_OK;;;2;A6;;;1;2;0;;;1;;Aq;;;Lista de Consultas Personalizadas

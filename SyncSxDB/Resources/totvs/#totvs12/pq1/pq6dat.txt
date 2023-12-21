@@ -1,0 +1,33 @@
+PQ1;01;2;Pesquisar;1;AxPesqui();;;
+PQ1;02;2;Visualizar;2;cCadastro:= oCQuery:cCadastro;;
+AxVisual("PQ1", PQ1->(Recno()),2);;;
+PQ1;03;2;Ajusta Ordem e Alias;4;aTroca := {};;
+Aadd(aTroca, { "ADK000X", '<ADVPL>RETSQLNAME("ADK")</ADVPL>' })
+
+nHandle := MSFCreate("C:\TEMP\CONSULTA.HTM", 0);;
+FWrite(nHandle, '<html><head><title>Log de Alterações Instrução SQL</title><style type="text/css">');;
+FWrite(nHandle, "<!--table {width:760px;_width:760px;} #celula1 { width: 100px;  padding:10px; _width: 255px; -->");;
+FWrite(nHandle, "</style></head><body>");;
+FWrite(nHandle, "<table>");;
+FWrite(nHandle, '<tr><td id="celula1">ID</td><td id="celula1">SQL ANTES</td><td id="celula1">SQL DEPOIS</td></tr>' + Chr(13) + Chr(10));;
+DbSelectArea("PQ1");;
+cOrdem := "01";;
+MsAguarde({|| PQ1->(U_TRGWHILE("PQ1", ALLTRIM(M->PQ6_GDVPL), {}, .F.) ) },"Aguarde...","Ajustando as instruções");;
+
+FWrite(nHandle, "</table>");;
+FWrite(nHandle, "</body>");;
+FWrite(nHandle, "</html>");;
+FClose(nHandle);;
+
+Alert("Log Gerado em c:\temp\CONSULTA.HTM");;M->PQ1_SQL := PQ1->PQ1_SQL;;
+AEval( aTroca, { | aItem | M->PQ1_SQL := StrTran(M->PQ1_SQL, aItem[1], aItem[2]) } )
+
+If(M->PQ1_SQL <> PQ1->PQ1_SQL, FWrite(nHandle, '<tr><td id="celula1">' + PQ1->PQ1_ID + '</td>' + Chr(13) + Chr(10) + '<td id="celula1">' + PQ1->PQ1_SQL + '</td>' +  Chr(13) + Chr(10) + '<td id="celula1">' + M->PQ1_SQL + "</td></tr>" + Chr(13) + Chr(10)), .F.);;
+
+RecLock("PQ1", .F.);;
+PQ1->PQ1_ORDER := cOrdem;;
+PQ1->PQ1_SQL := M->PQ1_SQL;;
+PQ1->(MsUnLock());;
+cOrdem := Soma1(cOrdem);;;
+PQ1;04;2;Exportar;3;U_TRG10Exp();;;
+PQ1;05;2;Importar;3;U_TRG10Imp();;;

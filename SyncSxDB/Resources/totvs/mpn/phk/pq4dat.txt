@@ -1,0 +1,1 @@
+PHK;01;MOSTRAR_PHK;Mostrar Conteudo PHK ?;1;1;0;;;;1=SIM;2=NAO;N;N;;

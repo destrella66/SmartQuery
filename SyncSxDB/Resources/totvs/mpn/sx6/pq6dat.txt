@@ -1,0 +1,11 @@
+SX6;01;2;Pesquisar;1;AxPesqui();;;
+SX6;02;2;Data Fonte;3;aParam := {};;
+Aadd(aParam, {1, "Fonte",Space(50),"@!",'.T.','','',50,.T.});;
+
+__EXIT := ! ParamBox(aParam, "Parametros da rotina",, {|| AllwaysTrue()},,,,,,, .F.);;
+
+aFonte := GetApoInfo(mv_par01);;
+__EXIT := Len(aFonte) == 0;;
+Alert(VarInfo("aFonte", aFonte));;
+MemoWrit("c:\temp\fonte.txt", VarInfo("aFonte", aFonte));;;
+SX6;03;2;Token AWS;3;Alert(VarInfo("Token", u_TkAwsMnt()));;;
